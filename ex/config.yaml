@@ -1,0 +1,26 @@
+---
+BedFile: ex/markers.txt.bed
+isPcrBinary: isPcr
+TwoBitFile: hg38.2bit
+MpdBinary: ../mpd-c/build/mpd
+MpdIdx: hg38.d14.sdx
+dbSnpIdx: ds_flat.sdx
+
+CoverageThreshold: 0.8
+PrimerSizeMin: 17
+PrimerSizeMax: 27
+PadSize: 60
+PoolMax: 10
+PoolMin: 5
+
+Iter: 2
+IncrTm: 1
+IncrTmStep: 1
+IncrAmpSize: 10
+
+InitAmpSizeMin: 160
+InitAmpSizeMax: 240
+InitGcMin: 0.3
+InitGcMax: 0.7
+InitTmMin: 57
+InitTmMax: 62
