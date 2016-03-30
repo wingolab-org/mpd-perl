@@ -5,7 +5,12 @@ This package assists in the automation of multiplex primer design. To get the mo
 ## Installation
 
 - Compiling the c binaries. Follow the instructions here: [mpd-c](http://github.com/wingolab-org/mpd-c).
-- Install the MPD package using `cpanm` (i.e., [App::cpanminus](https://metacpan.org/release/App-cpanminus)). To do this, download the tarball of the package and execute `cpanm MPD-0001.tar.gz`.
+- Clone the perl MPD package (e.g., `git clone https://github.com/wingolab-org/mpd-perl.git`).
+- There is a pre-build tarball of the MPD package suitable for installation with `cpanm` (i.e., [App::cpanminus](https://metacpan.org/release/App-cpanminus)). To install, `cpanm MPD.tar.gz`.
+  - The tarball was created with `Dist::Zilla`. Otherwise, `Dist::Zilla` is not needed.
+  - Run tests within the directory like so: `prove -l` or `prove -lv t/some_test.t`
+  - Coding style and tidying is kept in `.perltidyrc` (`Perl::Tidy`) and `tidyall -a` (`Code::Tidy`) is used to tidy code before committing.
+  - If you want to install `Dist::Zilla`, please see [dagolden's distribution](https://github.com/dagolden/Dist-Zilla-PluginBundle-DAGOLDEN) and [Dist::Zilla on metacpan](https://metacpan.org/pod/Dist::Zilla).
 - See examples scripts in the `ex` directory or look at the tests, specifically, `t/05-Mpd.t` to see how to build and use the MPD object.
 
 ## Optional features
@@ -71,3 +76,5 @@ From `design.pl`:
       }
     );
     $m->RunAll();             # run the design.
+
+- Feel free to email the authors with questions or suggestions.
