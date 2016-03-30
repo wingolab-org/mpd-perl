@@ -81,7 +81,10 @@ sub PercentBasesCovered {
       for ( my $i = $c->Start; $i <= $c->End; $i++ ) {
         my $site = join ":", $c->Chr, $i;
         if ( $bedObj->exists_site($site) ) {
-          $hash{ $c->Name } += 1;
+          $hash{covered}{ $c->Name } += 1;
+        }
+        else {
+          $hash{uncovered}{ $c->Name } += 1;
         }
       }
     }
@@ -91,8 +94,7 @@ sub PercentBasesCovered {
   if ( !%hash ) {
     return 0;
   }
-
-  return ( $hash{covered} / ( $hash{covered} + $hash{uncovered} ) );
+  return \%hash;
 }
 
 sub PercentCovered {
@@ -110,6 +112,7 @@ sub PercentCovered {
     return 0;
   }
   else {
+    say "$coveredCount / $entryCount";
     return $coveredCount / $entryCount;
   }
 }

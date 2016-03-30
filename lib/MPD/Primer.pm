@@ -54,6 +54,36 @@ sub as_aref {
   return \@array;
 }
 
+sub as_bed_obj {
+  my $self = shift;
+
+  my @array;
+
+  for my $p ( $self->all_primers ) {
+    my ( $chr, $start, $stop ) = $p->Covered();
+    my $b = MPD::Bed::Raw->new(
+      {
+        Chr   => $chr,
+        Start => $start,
+        End   => $stop,
+        Name  => $p->Name(),
+      }
+    );
+    push @array, $b;
+  }
+  return MPD::Bed->new( \@array );
+}
+
+sub WriteBedFile {
+  state $check = compile( Object, Str );
+  my ( $self, $file ) = $check->(@_);
+
+  my $bedObj = $self->as_bed_obj();
+  my $fh     = path($file)->filehandle(">");
+
+  say {$fh} $bedObj->Entries_as_BedFile;
+}
+
 sub WriteOrderFile {
   state $check = compile( Object, Str, Optional [HashRef] );
   my ( $self, $file, $optHref ) = $check->(@_);
@@ -666,28 +696,31 @@ sub _ReadPrimerFile {
     Reverse_primer Reverse_Tm Reverse_GC Chr Forward_start_position
     Forward_stop_position Reverse_start_position Reverse_stop_position
     Product_length Product_GC Product_tm Product/;
-  my ( %header, @msgs );
+  my ( %header, @fieldNotFound );
   my $poolCount = -1;
 
   my @lines = path($file)->lines( { chomp => 1 } );
   for my $lineCount ( 0 .. $#lines ) {
-    my $line = $lines[$lineCount];
-    my @fields = split /\t/, $line;
+    my $line         = $lines[$lineCount];
+    my @fields       = split /\t/, $line;
+    my %fieldPresent = map { $_ => 1 } @fields;
     if ( !%header ) {
-      for my $i ( 0 .. $#expHeader ) {
-        my $obsVal = $fields[$i];
-        my $expVal = $fields[$i];
-        if ( !defined $obsVal ) {
-          my $msg =
-            sprintf( "expected %d column of primer file to be %s", ( $i + 1 ), $expVal );
-          push @msgs, $msg;
+      for my $eField (@expHeader) {
+        if ( !exists $fieldPresent{$eField} ) {
+          push @fieldNotFound, $eField;
         }
       }
-      if ( !@msgs || $fields[0] =~ m/\A\d+/ ) {
+      # legacy files don't have a header but start with the Primer_number
+      if ( $fields[0] =~ m/\A\d+/ ) {
         %header = map { $fields[$_] => $_ } ( 0 .. $#expHeader );
+        # header is out of order
+      }
+      elsif ( !@fieldNotFound ) {
+        %header = map { $fields[$_] => $_ } ( 0 .. $#fields );
       }
       else {
-        my $msg = join "\n", ( "Error reading primer file:", @msgs );
+        my $msg = "Cannot find fields: ";
+        $msg .= "'" . join( "', '", @fieldNotFound ) . "'";
         croak $msg;
       }
     }
