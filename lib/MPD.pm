@@ -135,26 +135,31 @@ sub PrintPrimerData {
   state $check = compile( Object, Str );
   my ( $self, $OutExt ) = $check->(@_);
 
-  my $p = MPD::Primer->new( $self->KeepPrimers );
-  my $dupAref = $p->DuplicatePrimers();
-  $p = $p->RemovePrimers( $dupAref );
+  if (!$self->no_primer) {
 
-  # order file goes first so that we upate the primers with the
-  # names of the regions in the bedfile, if there are any.
-  my $forOrderPt = $self->OutDir->child( sprintf( "%s.forOrder.xlsx", $OutExt ) );
-  $p->WriteOrderFile( $forOrderPt->stringify, $self->_prnOpt );
+    my $p = MPD::Primer->new( $self->KeepPrimers );
+    my $dupAref = $p->DuplicatePrimers();
+    $p = $p->RemovePrimers( $dupAref );
 
-  my $coveredPt = $self->OutDir->child( sprintf( "%s.covered.bed", $OutExt ) );
-  $p->WriteCoveredFile( $coveredPt->stringify, $self->Bed );
+    # order file goes first so that we upate the primers with the
+    # names of the regions in the bedfile, if there are any.
+    my $forOrderPt = $self->OutDir->child( sprintf( "%s.forOrder.xlsx", $OutExt ) );
+    $p->WriteOrderFile( $forOrderPt->stringify, $self->_prnOpt );
 
-  my $uncoveredPt = $self->OutDir->child( sprintf( "%s.uncovered.bed", $OutExt ) );
-  $p->WriteUncoveredFile( $uncoveredPt->stringify, $self->Bed );
+    my $coveredPt = $self->OutDir->child( sprintf( "%s.covered.bed", $OutExt ) );
+    $p->WriteCoveredFile( $coveredPt->stringify, $self->Bed );
 
-  my $primerPt = $self->OutDir->child( sprintf( "%s.primer.txt", $OutExt ) );
-  $p->WritePrimerFile( $primerPt->stringify );
+    my $uncoveredPt = $self->OutDir->child( sprintf( "%s.uncovered.bed", $OutExt ) );
+    $p->WriteUncoveredFile( $uncoveredPt->stringify, $self->Bed );
 
-  my $isPcrPt = $self->OutDir->child( sprintf( "%s.isPcr.txt", $OutExt ) );
-  $p->WriteIsPcrFile( $isPcrPt->stringify );
+    my $primerPt = $self->OutDir->child( sprintf( "%s.primer.txt", $OutExt ) );
+    $p->WritePrimerFile( $primerPt->stringify );
+
+    my $isPcrPt = $self->OutDir->child( sprintf( "%s.isPcr.txt", $OutExt ) );
+    $p->WriteIsPcrFile( $isPcrPt->stringify );
+  } else {
+    say "No Primers written. This might be a dry run";
+  }
 }
 
 # FindBestCoverage - for testing purposes
