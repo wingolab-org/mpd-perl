@@ -496,6 +496,29 @@ sub BedCoverage {
   return MPD::Covered->new( \@array );
 }
 
+# DuplicatePrimers returns a list of duplicate primer names
+sub DuplicatePrimers {
+  my $self = shift;
+
+  my (@duplicates, %uniqPrimers);
+
+  for my $p ( $self->all_primers ) {
+    push @{ $uniqPrimers{ $p->Product } }, $p->Name;
+  }
+
+  for my $prod ( keys %uniqPrimers ) {
+    my $primerNamesAref = $uniqPrimers{ $prod };
+    if ( scalar @$primerNamesAref > 1 ) {
+      push @duplicates, @{ $primerNamesAref }[ 1 .. $#{ $primerNamesAref } ];
+      say dump( { DuplicatePrimers => \@duplicates });
+    }
+  }
+  return \@duplicates;
+}
+
+# RemovePrimers takes a list of primer names and removes them from the primer
+# object and re-writes the primers into a new object with the correct order
+# of primer pools and correct order of the primers within the pools
 sub RemovePrimers {
   state $check = compile( Object, ArrayRef );
   my ( $self, $PrimerNamesAref ) = $check->(@_);
@@ -513,14 +536,14 @@ sub RemovePrimers {
   my %NamesOfPrimers = map { $_ => 1 } @$PrimerNamesAref;
 
   for my $p ( $self->all_primers ) {
-    #print $p->Name;
+    print $p->Name;
     if ( !exists $NamesOfPrimers{ $p->Name } ) {
-      #say " is ok";
+      say " is ok";
       push @{ $newPoolCount{ $p->Pool } }, [ $p->Primer_number, $p->as_href ];
     }
-    #else {
-    #  say " is removed";
-    #}
+    else {
+      say " is removed";
+    }
   }
 
   my $newPool = 0;
@@ -800,4 +823,3 @@ sub _saveJsonData {
 __PACKAGE__->meta->make_immutable;
 
 1;
-
