@@ -27,7 +27,7 @@ my $time_now = ctime();
 
 has Bed => ( is => 'ro', isa => 'MPD::Bed', required => 1 );
 
-# for debugging
+# optionally run isPcr on design
 has RunIsPcr => ( is => 'ro', isa => 'Bool', default => 1 );
 
 # required files
@@ -92,6 +92,8 @@ sub RunMpp {
   }
 }
 
+# UniqPrimers calls isPcr to filter away primers that amplify >1 thing in the
+# genome based on isPcr's rules and any duplicates from the MPD program
 sub UniqPrimers {
   my $self = shift;
 
@@ -121,18 +123,22 @@ sub UniqPrimers {
     return;
   }
 
+  my %badPrimers;
+
   # Remove Degenerate primers
   my $psl     = MPD::Psl->new( $isPcrPt->stringify );
   my $dupAref = $psl->DegenerateMatches();
-  if ( !$dupAref ) {
-    return MPD::Primer->new( $primerPt->stringify );
+  $badPrimers{$_}++ for @$dupAref;
+
+  # remove duplicates sometimes introduced by the design process
+  my $primerObj = MPD::Primer->new( $primerPt->stringify );
+  $dupAref = $primerObj->DuplicatePrimers();
+  $badPrimers{$_}++ for @$dupAref;
+
+  if ( !%badPrimers ) {
+    return $primerObj;
   }
-  my %degenMatches = map { $_ => 1 } @$dupAref;
-  my $uniqPrimerObj = $primer->RemovePrimers( [ sort keys %degenMatches ] );
-
-  #say dump( { uniqPrimerObj => $uniqPrimerObj, degeneratePrimers => \%degenMatches } );
-
-  return $uniqPrimerObj;
+  return $primerObj->RemovePrimers( [ sort keys %badPrimers ] );
 }
 
 __PACKAGE__->meta->make_immutable;
