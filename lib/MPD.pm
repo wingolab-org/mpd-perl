@@ -46,41 +46,38 @@ has Act      => ( is => 'ro', isa => 'Bool', default => 0 );
 
 # attr for parameter optimization
 has CoverageThreshold => ( is => 'ro', isa => 'Num', default => 0.5, required => 1 );
-has MinPool           => ( is => 'ro', isa => 'Num', default => 1,   required => 1 );
 has IncrAmpSize       => ( is => 'ro', isa => 'Int', default => 10,  required => 1 );
 has IncrTm            => ( is => 'ro', isa => 'Num', default => 0.5, required => 1 );
 has IncrTmStep        => ( is => 'ro', isa => 'Num', default => 0.5, required => 1 );
 has IterMax           => ( is => 'ro', isa => 'Int', default => 10,  required => 1 );
-has PoolMax           => ( is => 'ro', isa => 'Int', default => 10,  required => 1 );
-has PoolMin           => ( is => 'ro', isa => 'Int', default => 1,   required => 1 );
-has PadSize           => ( is => 'ro', isa => 'Int', default => 60,  required => 1 );
 
-# initial attr values for MPD::PrimerDesign
+# pcr attrs, mirrored in MPD::PrimerDesign
 has PrimerSizeMin  => ( is => 'ro', isa => 'Int', default => 17,  required => 1 );
 has PrimerSizeMax  => ( is => 'ro', isa => 'Int', default => 27,  required => 1 );
-has InitAmpSizeMin => ( is => 'ro', isa => 'Int', default => 180, required => 1 );
-has InitAmpSizeMax => ( is => 'ro', isa => 'Int', default => 230, required => 1 );
-has InitGcMin      => ( is => 'ro', isa => 'Num', default => 0.3, required => 1 );
-has InitGcMax      => ( is => 'ro', isa => 'Num', default => 0.7, required => 1 );
-has InitTmMin      => ( is => 'ro', isa => 'Num', default => 57,  required => 1 );
-has InitTmMax      => ( is => 'ro', isa => 'Num', default => 62,  required => 1 );
-has InitTmStep     => ( is => 'ro', isa => 'Num', default => 0.5, required => 1 );
+has AmpSizeMin     => ( is => 'rw', isa => 'Int', default => 180, required => 1 );
+has AmpSizeMax     => ( is => 'rw', isa => 'Int', default => 230, required => 1 );
+has GcMin          => ( is => 'rw', isa => 'Num', default => 0.3, required => 1 );
+has GcMax          => ( is => 'rw', isa => 'Num', default => 0.7, required => 1 );
+has TmMin          => ( is => 'rw', isa => 'Num', default => 57,  required => 1 );
+has TmMax          => ( is => 'rw', isa => 'Num', default => 62,  required => 1 );
+has PoolMax        => ( is => 'ro', isa => 'Int', default => 10,  required => 1 );
+has PoolMin        => ( is => 'ro', isa => 'Int', default => 1,   required => 1 );
+has TmStep         => ( is => 'rw', isa => 'Num', default => 0.5, required => 1 );
+has PadSize        => ( is => 'ro', isa => 'Int', default => 60,  required => 1 );
 
-# variable options
-has AmpSizeMin => ( is => 'rw', isa => 'Int', default => 180, required => 1 );
-has AmpSizeMax => ( is => 'rw', isa => 'Int', default => 230, required => 1 );
-has GcMin      => ( is => 'rw', isa => 'Num', default => 0.3, required => 1 );
-has GcMax      => ( is => 'rw', isa => 'Num', default => 0.7, required => 1 );
-has TmMin      => ( is => 'rw', isa => 'Num', default => 57,  required => 1 );
-has TmMax      => ( is => 'rw', isa => 'Num', default => 62,  required => 1 );
-has TmStep     => ( is => 'rw', isa => 'Num', default => 0.5, required => 1 );
+# regions that are uncovered _after_ initial trial
 has UnCovered => ( is => 'rw', isa => 'Maybe[MPD::Bed]', default => sub { } );
 
 # printing options
 has ProjectName => ( is => 'ro', isa => 'Str', default => 'MPD' );
 has FwdAdapter  => ( is => 'ro', isa => 'Str', default => 'ACACTGACGACATGGTTCTACA' );
 has RevAdapter  => ( is => 'ro', isa => 'Str', default => 'TACGGTAGCAGAGACTTGGTCT' );
+
+# offset to start printing pools
 has PrnOffset   => ( is => 'ro', isa => 'Num', default => 0 );
+
+# randomize printing of primer pools (avoids large and small pools clustering
+# across an experiment in a non-random way)
 has Randomize => ( is => 'ro', isa => 'Bool', default => 1 );
 
 has _Iter => (
@@ -114,7 +111,7 @@ has KeepPools => (
   default => sub { [] },
 );
 
-# final primer design...
+# final primer design
 has KeepPrimers => (
   traits  => ['Array'],
   is      => 'ro',
@@ -139,6 +136,8 @@ sub PrintPrimerData {
   my ( $self, $OutExt ) = $check->(@_);
 
   my $p = MPD::Primer->new( $self->KeepPrimers );
+  my $dupAref = $p->DuplicatePrimers();
+  $p = $p->RemovePrimers( $dupAref );
 
   # order file goes first so that we upate the primers with the
   # names of the regions in the bedfile, if there are any.
@@ -273,7 +272,7 @@ sub _runPrimerDesign {
     $self->_printPrimerSummary( $primerObj, '_runPrimerDesign() - before filter' );
   }
 
-  $primerObj = $primerObj->FilterPoolBelowThreshold( $self->MinPool() );
+  $primerObj = $primerObj->FilterPoolBelowThreshold( $self->PoolMin() );
   if ( !defined $primerObj ) {
     return;
   }
