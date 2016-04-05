@@ -13,14 +13,14 @@ PadSize: 60
 PoolMax: 10
 PoolMin: 5
 
+AmpSizeMax: 260
+AmpSizeMin: 230
+TmMax: 62
+TmMin: 57
+GcMax: 0.7
+GcMin: 0.3
+
 Iter: 2
 IncrTm: 1
 IncrTmStep: 1
 IncrAmpSize: 10
-
-InitAmpSizeMin: 160
-InitAmpSizeMax: 240
-InitGcMin: 0.3
-InitGcMax: 0.7
-InitTmMin: 57
-InitTmMax: 62

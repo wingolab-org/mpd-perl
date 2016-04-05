@@ -17,7 +17,7 @@ my ( $verbose, $act, $dir, $prn, $minPool, $bed_file, $config_file, $out_ext );
 
 # get options
 die
-  "Usage: $0 [-v] [-a] [-p|print] -b <bed file> -c <config file> -d <output Dir> -o <out_ext>\n"
+  "Usage: $0 [-v] [-a] -b <bed file> -c <config file> -d <output Dir> -o <out_ext>\n"
   unless GetOptions(
   'v|verbose'  => \$verbose,
   'a|act'      => \$act,
@@ -25,15 +25,14 @@ die
   'c|config=s' => \$config_file,
   'o|out=s'    => \$out_ext,
   'd|dir=s'    => \$dir,
-  'p|print'    => \$prn,
-  'min_pool=n' => \$minPool,
+  'min_pool=n' => \$poolMin,
   )
   and $bed_file
   and $config_file
   and $out_ext;
 $verbose++ unless $act;
 
-$minPool = 1   unless defined $minPool;
+$poolMin = 1   unless defined $poolMin;
 $dir     = "." unless defined $dir;
 
 my $m = MPD->new_with_config(
@@ -44,7 +43,7 @@ my $m = MPD->new_with_config(
     OutDir      => $dir,
     InitTmMin   => 58,
     InitTmMax   => 61,
-    MinPool     => $minPool,
+    PoolMin     => $poolMin,
     Debug       => $verbose,
     IterMax     => 2,
     RunIsPcr    => undef,

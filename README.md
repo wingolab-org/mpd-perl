@@ -14,7 +14,7 @@ This package assists in the automation of multiplex primer design. To get the mo
 - See examples scripts in the `ex` directory or look at the tests, specifically, `t/05-Mpd.t` to see how to build and use the MPD object.
 
 ## Optional features
-- The MPD package can be made to use the standalone binary for isPcr by Jim Kent. If you are not familiar with isPcr [here is a web version](https://genome.ucsc.edu/cgi-bin/hgPcr) and that has details about obtaining the source code to build the stand alone binary.
+- The MPD package can be made to use the standalone binary for isPcr by Jim Kent. If you are not familiar with isPcr [here is a web version](https://genome.ucsc.edu/cgi-bin/hgPcr) which has details about obtaining the source code to build the stand alone binary.
 - If you use the isPcr you will need the 2bit genome of the organism.
 
 ## Usage
@@ -34,22 +34,21 @@ From the `ex` (example) directory:
     CoverageThreshold: 0.8           # The definition of "covered"
     PrimerSizeMin: 17                # Minimum primer size
     PrimerSizeMax: 27                # Maximum primer size
-    PadSize: 60                      # The region around the target to search for primers
-
+    PadSize: 60                      # The region flanking the target to search for primers
     PoolMax: 10                      # Maximum number of primers in a pool
     PoolMin: 5                       # Minimum number of primers in a pool
+
+    AmpSizeMax: 260                  # Initial maximum amplicon size
+    AmpSizeMin: 230                  # Initial minimum amplicon size
+    TmMax: 62                        # Initial maximum Tm
+    TmMin: 57                        # Initial minimum Tm
+    GcMax: 0.7                       # Initial maximum GC
+    GcMin: 0.3                       # Initial minimum GC
 
     Iter: 2                          # Number of iterations to try to find primers
     IncrTm: 1                        # degrees Celsius to widen the Min/Max Tm on successive trial
     IncrTmStep: 1                    # degrees Celsius to widen the Tm step (within mpd-c) on successive trial
     IncrAmpSize: 10                  # number of base pairs to widen the acceptable amplicon max/min on successive trial
-
-    InitAmpSizeMin: 160              # Initial Minimum Amplicon Size
-    InitAmpSizeMax: 240              # Initial Maximum Amplicon Size
-    InitGcMin: 0.3                   # Initial Minimum %GC
-    InitGcMax: 0.7                   # Initial Maximum %GC
-    InitTmMin: 57                    # Initial Minimum Tm
-    InitTmMax: 62                    # Initial Maximum Tm
 
 - Create an MPD object, and call the `RunAll()` method.
 
@@ -63,7 +62,7 @@ From `design.pl`:
         OutDir      => '/temp/',
         InitTmMin   => 58,
         InitTmMax   => 61,
-        MinPool     => 5,
+        PoolMin     => 5,
         Debug       => 0,
         IterMax     => 2,
         RunIsPcr    => undef, # set to something perl evaluates to true if you want isPcr to check the in-silico PCR
