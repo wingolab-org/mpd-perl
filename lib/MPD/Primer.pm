@@ -500,17 +500,17 @@ sub BedCoverage {
 sub DuplicatePrimers {
   my $self = shift;
 
-  my (@duplicates, %uniqPrimers);
+  my ( @duplicates, %uniqPrimers );
 
   for my $p ( $self->all_primers ) {
     push @{ $uniqPrimers{ $p->Product } }, $p->Name;
   }
 
   for my $prod ( keys %uniqPrimers ) {
-    my $primerNamesAref = $uniqPrimers{ $prod };
+    my $primerNamesAref = $uniqPrimers{$prod};
     if ( scalar @$primerNamesAref > 1 ) {
-      push @duplicates, @{ $primerNamesAref }[ 1 .. $#{ $primerNamesAref } ];
-      say dump( { DuplicatePrimers => \@duplicates });
+      push @duplicates, @{$primerNamesAref}[ 1 .. $#{$primerNamesAref} ];
+      say dump( { DuplicatePrimers => \@duplicates } );
     }
   }
   return \@duplicates;

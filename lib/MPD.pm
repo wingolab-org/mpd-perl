@@ -52,18 +52,18 @@ has IncrTmStep        => ( is => 'ro', isa => 'Num', default => 0.5, required =>
 has IterMax           => ( is => 'ro', isa => 'Int', default => 10,  required => 1 );
 
 # pcr attrs, mirrored in MPD::PrimerDesign
-has PrimerSizeMin  => ( is => 'ro', isa => 'Int', default => 17,  required => 1 );
-has PrimerSizeMax  => ( is => 'ro', isa => 'Int', default => 27,  required => 1 );
-has AmpSizeMin     => ( is => 'rw', isa => 'Int', default => 180, required => 1 );
-has AmpSizeMax     => ( is => 'rw', isa => 'Int', default => 230, required => 1 );
-has GcMin          => ( is => 'rw', isa => 'Num', default => 0.3, required => 1 );
-has GcMax          => ( is => 'rw', isa => 'Num', default => 0.7, required => 1 );
-has TmMin          => ( is => 'rw', isa => 'Num', default => 57,  required => 1 );
-has TmMax          => ( is => 'rw', isa => 'Num', default => 62,  required => 1 );
-has PoolMax        => ( is => 'ro', isa => 'Int', default => 10,  required => 1 );
-has PoolMin        => ( is => 'ro', isa => 'Int', default => 1,   required => 1 );
-has TmStep         => ( is => 'rw', isa => 'Num', default => 0.5, required => 1 );
-has PadSize        => ( is => 'ro', isa => 'Int', default => 60,  required => 1 );
+has PrimerSizeMin => ( is => 'ro', isa => 'Int', default => 17,  required => 1 );
+has PrimerSizeMax => ( is => 'ro', isa => 'Int', default => 27,  required => 1 );
+has AmpSizeMin    => ( is => 'rw', isa => 'Int', default => 180, required => 1 );
+has AmpSizeMax    => ( is => 'rw', isa => 'Int', default => 230, required => 1 );
+has GcMin         => ( is => 'rw', isa => 'Num', default => 0.3, required => 1 );
+has GcMax         => ( is => 'rw', isa => 'Num', default => 0.7, required => 1 );
+has TmMin         => ( is => 'rw', isa => 'Num', default => 57,  required => 1 );
+has TmMax         => ( is => 'rw', isa => 'Num', default => 62,  required => 1 );
+has PoolMax       => ( is => 'ro', isa => 'Int', default => 10,  required => 1 );
+has PoolMin       => ( is => 'ro', isa => 'Int', default => 1,   required => 1 );
+has TmStep        => ( is => 'rw', isa => 'Num', default => 0.5, required => 1 );
+has PadSize       => ( is => 'ro', isa => 'Int', default => 60,  required => 1 );
 
 # regions that are uncovered _after_ initial trial
 has UnCovered => ( is => 'rw', isa => 'Maybe[MPD::Bed]', default => sub { } );
@@ -74,7 +74,7 @@ has FwdAdapter  => ( is => 'ro', isa => 'Str', default => 'ACACTGACGACATGGTTCTAC
 has RevAdapter  => ( is => 'ro', isa => 'Str', default => 'TACGGTAGCAGAGACTTGGTCT' );
 
 # offset to start printing pools
-has PrnOffset   => ( is => 'ro', isa => 'Num', default => 0 );
+has PrnOffset => ( is => 'ro', isa => 'Num', default => 0 );
 
 # randomize printing of primer pools (avoids large and small pools clustering
 # across an experiment in a non-random way)
@@ -135,11 +135,11 @@ sub PrintPrimerData {
   state $check = compile( Object, Str );
   my ( $self, $OutExt ) = $check->(@_);
 
-  if (!$self->no_primer) {
+  if ( !$self->no_primer ) {
 
-    my $p = MPD::Primer->new( $self->KeepPrimers );
+    my $p       = MPD::Primer->new( $self->KeepPrimers );
     my $dupAref = $p->DuplicatePrimers();
-    $p = $p->RemovePrimers( $dupAref );
+    $p = $p->RemovePrimers($dupAref);
 
     # order file goes first so that we upate the primers with the
     # names of the regions in the bedfile, if there are any.
@@ -157,7 +157,8 @@ sub PrintPrimerData {
 
     my $isPcrPt = $self->OutDir->child( sprintf( "%s.isPcr.txt", $OutExt ) );
     $p->WriteIsPcrFile( $isPcrPt->stringify );
-  } else {
+  }
+  else {
     say "No Primers written. This might be a dry run";
   }
 }
