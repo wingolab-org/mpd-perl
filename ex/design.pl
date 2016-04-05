@@ -6,6 +6,7 @@
 #
 # Description:
 
+use lib '/Users/twingo/software/mpd-perl/lib/';
 use 5.10.0;
 use warnings;
 use strict;
@@ -13,7 +14,7 @@ use Getopt::Long;
 use MPD;
 
 # variables
-my ( $verbose, $act, $dir, $prn, $minPool, $bed_file, $config_file, $out_ext );
+my ( $verbose, $act, $dir, $prn, $poolMin, $bed_file, $config_file, $out_ext );
 
 # get options
 die
