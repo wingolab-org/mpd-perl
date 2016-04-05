@@ -538,12 +538,12 @@ sub RemovePrimers {
   for my $p ( $self->all_primers ) {
     print $p->Name;
     if ( !exists $NamesOfPrimers{ $p->Name } ) {
-      say " is ok";
+      #say " is ok";
       push @{ $newPoolCount{ $p->Pool } }, [ $p->Primer_number, $p->as_href ];
     }
-    else {
-      say " is removed";
-    }
+    #else {
+    #  say " is removed";
+    #}
   }
 
   my $newPool = 0;
