@@ -536,7 +536,7 @@ sub RemovePrimers {
   my %NamesOfPrimers = map { $_ => 1 } @$PrimerNamesAref;
 
   for my $p ( $self->all_primers ) {
-    print $p->Name;
+    # print $p->Name;
     if ( !exists $NamesOfPrimers{ $p->Name } ) {
       #say " is ok";
       push @{ $newPoolCount{ $p->Pool } }, [ $p->Primer_number, $p->as_href ];
