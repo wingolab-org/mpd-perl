@@ -190,7 +190,7 @@ sub _pcrParams {
   my $self = shift;
 
   my @attrs = qw/ AmpSizeMin AmpSizeMax GcMin GcMax GcMax TmMin TmMax TmStep
-    PoolMax PadSize OutExt RunIsPcr /;
+    PoolMin PoolMax PadSize OutExt RunIsPcr /;
   my @files = qw/ BedFile isPcrBinary TwoBitFile MpdBinary MpdIdx dbSnpIdx /;
 
   my %attrs = map { $_ => $self->$_ } (@attrs);
