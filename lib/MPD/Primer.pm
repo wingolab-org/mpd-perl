@@ -510,7 +510,7 @@ sub DuplicatePrimers {
     my $primerNamesAref = $uniqPrimers{$prod};
     if ( scalar @$primerNamesAref > 1 ) {
       push @duplicates, @{$primerNamesAref}[ 1 .. $#{$primerNamesAref} ];
-      say dump( { DuplicatePrimers => \@duplicates } );
+      #say dump( { DuplicatePrimers => \@duplicates } );
     }
   }
   return \@duplicates;

@@ -137,6 +137,10 @@ sub PrintPrimerData {
 
   if ( !$self->no_primer ) {
 
+    if ($self->verbose) {
+      say "Writing final primer design.";
+    }
+
     my $p       = MPD::Primer->new( $self->KeepPrimers );
     my $dupAref = $p->DuplicatePrimers();
     $p = $p->RemovePrimers($dupAref);
@@ -159,7 +163,7 @@ sub PrintPrimerData {
     $p->WriteIsPcrFile( $isPcrPt->stringify );
   }
   else {
-    say "No Primers written. This might be a dry run";
+    say "No Primers written. This might be a dry run.";
   }
 }
 
