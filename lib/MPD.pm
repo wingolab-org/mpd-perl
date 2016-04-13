@@ -137,7 +137,7 @@ sub PrintPrimerData {
 
   if ( !$self->no_primer ) {
 
-    if ($self->verbose) {
+    if ( $self->verbose ) {
       say "Writing final primer design.";
     }
 

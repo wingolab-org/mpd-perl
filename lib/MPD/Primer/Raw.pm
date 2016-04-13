@@ -34,7 +34,8 @@ has Product_tm             => ( is => 'ro', isa => 'Str', required => 1, );
 has Product                => ( is => 'ro', isa => 'Str', required => 1, );
 has CoveredName            => ( is => 'rw', isa => 'Str', default  => 'NA' );
 
-my @attrs = qw/ Pool Primer_number Forward_primer Forward_Tm Forward_GC Reverse_primer
+my @attrs =
+  qw/ Pool Primer_number Forward_primer Forward_Tm Forward_GC Reverse_primer
   Reverse_Tm Reverse_GC Chr Forward_start_position Forward_stop_position Reverse_start_position
   Reverse_stop_position Product_length Product_GC Product_tm Product/;
 
