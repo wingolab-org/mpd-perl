@@ -13,7 +13,7 @@ use JSON;
 use Path::Tiny;
 use Type::Params qw/ compile /;
 use Types::Standard qw/ :types /;
-use Scalar::Util qw/ reftype /;
+use Scalar::Util qw/ looks_like_number reftype /;
 use List::Util qw/ shuffle /;
 use Time::localtime;
 
@@ -97,6 +97,7 @@ sub WriteOrderFile {
   my @header    = ( "WellPosition", "Name", "Sequence", "Notes" );
   my $orderHref = $self->OrderAsHref($optHref);
   my $time_now  = ( exists $optHref->{time} ) ? $optHref->{time} : ctime();
+  my $primerCount = 0;
 
   my $workbook = Excel::Writer::XLSX->new($file);
   $workbook->set_properties(
@@ -117,8 +118,12 @@ sub WriteOrderFile {
     for my $primerAref ( @{ $orderHref->{$plate} } ) {
       $worksheet->write( $row, $col, $primerAref );
       $row++;
+      $primerCount++;
     }
   }
+  # I want to return the primer pairs written so divide the individual primers by 2
+  $primerCount /= 2;
+  return $primerCount;
 }
 
 # OrderAsHref returns a hashref with keys that correspond to plates and values
@@ -156,7 +161,7 @@ sub OrderAsHref {
   my @poolNumbers = sort { $a <=> $b } keys %$poolCountHref;
 
   # get options
-  my ( $bedObj, $prjName, $offset, $fwdAdapter, $revAdapter );
+  my ( $bedObj, $prjName, $offset, $fwdAdapter, $revAdapter, $plateMax );
   if ( exists $optHref->{Bed} ) {
     $self->_UpdatePrimerCoveredNames( $optHref->{Bed} );
   }
@@ -180,6 +185,12 @@ sub OrderAsHref {
   }
   else {
     $prjName = 'MPD';
+  }
+  if ( exists $optHref->{MaxPlates} ) {
+    $plateMax = $optHref->{MaxPlates} - 1;
+  }
+  else {
+    $plateMax = 48-1;
   }
   if ( exists $optHref->{PrnOffset} ) {
     $offset = $optHref->{PrnOffset};
@@ -205,15 +216,25 @@ sub OrderAsHref {
   my %prnHash;
   my $poolStartsAref = $self->_poolStart();
   my $pairCount      = 0;
+  my $primerCount      = 0;
 
   for my $poolNumber (@poolNumbers) {
 
+    # are we beyond the max number of plates
     if ( !exists $poolStartsAref->[ $pairCount + $offset ] ) {
-      my $msg = "Asked to plate across >40 plates";
+      my $msg = "Asked to plate across >48 plates";
       warn $msg;
       last;
     }
+
+    # did we reach the maximum number of plates specified
     my ( $plate, $row ) = @{ $poolStartsAref->[ $pairCount + $offset ] };
+    if ( $plate > $plateMax ) {
+      my $msg = sprintf("Stopped writing primers after %d plates, %d primer pools, %d primer count", 
+        $plateMax+1, $pairCount, $primerCount) ;
+      say STDERR $msg;
+      return \%prnHash;
+    }
 
     my $colCount = 0;
     for my $primerPairAref ( @{ $hash{$poolNumber} } ) {
@@ -225,6 +246,7 @@ sub OrderAsHref {
       push @{ $prnHash{$fwdPlateName} }, [ $well, $primerName, $fwdSeq, $regionName ];
       push @{ $prnHash{$revPlateName} }, [ $well, $primerName, $revSeq, $regionName ];
       $colCount++;
+      $primerCount++;
     }
     $pairCount++;
   }
@@ -599,8 +621,13 @@ sub WriteUncoveredFile {
 }
 
 sub WritePrimerFile {
-  state $check = compile( Object, Str );
-  my ( $self, $fileName ) = $check->(@_);
+  state $check = compile( Object, Str, Optional [Num] );
+  my ( $self, $fileName, $primerMax ) = $check->(@_);
+
+  my $primerCount = 0;
+  if (!defined $primerMax) {
+    $primerMax = 999;
+  }
 
   if ( $self->no_primers ) {
     my $msg = "Error - no primers to write to primer file: $fileName";
@@ -612,19 +639,28 @@ sub WritePrimerFile {
   my @header;
 
   for my $p ( $self->all_primers ) {
+    if ( $primerCount > $primerMax) {
+      last;
+    }
     if ( !@header ) {
       @header = @{ $p->Header() };
       say {$fh} join "\t", @header;
     }
     my @data = map { $p->$_ } @header;
     say {$fh} join "\t", @data;
+    $primerCount++;
   }
-  return 1;
+  return $primerCount;
 }
 
 sub WriteIsPcrFile {
-  state $check = compile( Object, Str );
-  my ( $self, $fileName ) = $check->(@_);
+  state $check = compile( Object, Str, Optional [Num] );
+  my ( $self, $fileName, $primerMax ) = $check->(@_);
+
+  my $primerCount = 0;
+  if (!defined $primerMax) {
+    $primerMax = 999;
+  }
 
   if ( $self->no_primers ) {
     my $msg = "Error - no primers to write to isPcr file: $fileName";
@@ -635,9 +671,13 @@ sub WriteIsPcrFile {
   my $fh = path($fileName)->filehandle(">");
 
   for my $p ( $self->all_primers ) {
+    if ( $primerCount > $primerMax) {
+      last;
+    }
     say {$fh} join "\t", $p->Name, $p->Forward_primer, $p->Reverse_primer;
+    $primerCount++;
   }
-  return 1;
+  return $primerCount;
 }
 
 sub Sumarize_as_aref {
@@ -719,7 +759,7 @@ sub _ReadPrimerFile {
     Reverse_primer Reverse_Tm Reverse_GC Chr Forward_start_position
     Forward_stop_position Reverse_start_position Reverse_stop_position
     Product_length Product_GC Product_tm Product/;
-  my ( %header, @fieldNotFound );
+  my ( %header, @NotFoundFields );
   my $poolCount = -1;
 
   my @lines = path($file)->lines( { chomp => 1 } );
@@ -730,39 +770,39 @@ sub _ReadPrimerFile {
     if ( !%header ) {
       for my $eField (@expHeader) {
         if ( !exists $fieldPresent{$eField} ) {
-          push @fieldNotFound, $eField;
+          push @NotFoundFields, $eField;
         }
       }
       # legacy files don't have a header but start with the Primer_number
       if ( $fields[0] =~ m/\A\d+/ ) {
-        %header = map { $fields[$_] => $_ } ( 0 .. $#expHeader );
-        # header is out of order
+        %header = map { $expHeader[$_] => $_ } ( 0 .. $#expHeader );
+        say dump(\%header);
       }
-      elsif ( !@fieldNotFound ) {
+      # newer format has a header so skip to the next line after grabbing the header
+      elsif ( !@NotFoundFields ) {
         %header = map { $fields[$_] => $_ } ( 0 .. $#fields );
+        next;
       }
       else {
         my $msg = "Cannot find fields: ";
-        $msg .= "'" . join( "', '", @fieldNotFound ) . "'";
+        $msg .= "'" . join( "', '", @NotFoundFields ) . "'";
         croak $msg;
       }
     }
-    else {
-      my %data = map { $_ => $fields[ $header{$_} ] } ( keys %header );
-      my $primerNumber = $data{Primer_number};
-      if ( !defined $primerNumber ) {
-        my $msg = sprintf( "Error: no value for expected header Primer_number at line: %d",
-          ( $lineCount + 1 ) );
-        croak $msg;
-      }
+    my %data = map { $_ => $fields[ $header{$_} ] } ( keys %header );
+    my $primerNumber = $data{Primer_number};
+    if ( !looks_like_number($primerNumber) ) {
+      my $msg = sprintf( "Error: no value for expected header Primer_number at line: %d\n\n==> %s",
+        ( $lineCount + 1 ), $line );
+      croak $msg;
+    }
 
-      if ( $primerNumber == 0 ) {
-        $poolCount++;
-      }
-      $data{Pool} = $poolCount;
-      my $p = MPD::Primer::Raw->new( \%data );
-      push @primers, $p;
+    if ( $primerNumber == 0 ) {
+      $poolCount++;
     }
+    $data{Pool} = $poolCount;
+    my $p = MPD::Primer::Raw->new( \%data );
+    push @primers, $p;
   }
   return \@primers;
 }
