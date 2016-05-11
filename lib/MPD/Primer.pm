@@ -94,9 +94,9 @@ sub WriteOrderFile {
     return;
   }
 
-  my @header    = ( "WellPosition", "Name", "Sequence", "Notes" );
-  my $orderHref = $self->OrderAsHref($optHref);
-  my $time_now  = ( exists $optHref->{time} ) ? $optHref->{time} : ctime();
+  my @header      = ( "WellPosition", "Name", "Sequence", "Notes" );
+  my $orderHref   = $self->OrderAsHref($optHref);
+  my $time_now    = ( exists $optHref->{time} ) ? $optHref->{time} : ctime();
   my $primerCount = 0;
 
   my $workbook = Excel::Writer::XLSX->new($file);
@@ -190,7 +190,7 @@ sub OrderAsHref {
     $plateMax = $optHref->{MaxPlates} - 1;
   }
   else {
-    $plateMax = 48-1;
+    $plateMax = 48 - 1;
   }
   if ( exists $optHref->{PrnOffset} ) {
     $offset = $optHref->{PrnOffset};
@@ -216,7 +216,7 @@ sub OrderAsHref {
   my %prnHash;
   my $poolStartsAref = $self->_poolStart();
   my $pairCount      = 0;
-  my $primerCount      = 0;
+  my $primerCount    = 0;
 
   for my $poolNumber (@poolNumbers) {
 
@@ -230,8 +230,11 @@ sub OrderAsHref {
     # did we reach the maximum number of plates specified
     my ( $plate, $row ) = @{ $poolStartsAref->[ $pairCount + $offset ] };
     if ( $plate > $plateMax ) {
-      my $msg = sprintf("Stopped writing primers after %d plates, %d primer pools, %d primer count", 
-        $plateMax+1, $pairCount, $primerCount) ;
+      my $msg = sprintf(
+        "Stopped writing primers after %d plates, %d primer pools, %d primer count",
+        $plateMax + 1,
+        $pairCount, $primerCount
+      );
       say STDERR $msg;
       return \%prnHash;
     }
@@ -625,7 +628,7 @@ sub WritePrimerFile {
   my ( $self, $fileName, $primerMax ) = $check->(@_);
 
   my $primerCount = 0;
-  if (!defined $primerMax) {
+  if ( !defined $primerMax ) {
     $primerMax = 999;
   }
 
@@ -639,7 +642,7 @@ sub WritePrimerFile {
   my @header;
 
   for my $p ( $self->all_primers ) {
-    if ( $primerCount > $primerMax) {
+    if ( $primerCount > $primerMax ) {
       last;
     }
     if ( !@header ) {
@@ -658,7 +661,7 @@ sub WriteIsPcrFile {
   my ( $self, $fileName, $primerMax ) = $check->(@_);
 
   my $primerCount = 0;
-  if (!defined $primerMax) {
+  if ( !defined $primerMax ) {
     $primerMax = 999;
   }
 
@@ -671,7 +674,7 @@ sub WriteIsPcrFile {
   my $fh = path($fileName)->filehandle(">");
 
   for my $p ( $self->all_primers ) {
-    if ( $primerCount > $primerMax) {
+    if ( $primerCount > $primerMax ) {
       last;
     }
     say {$fh} join "\t", $p->Name, $p->Forward_primer, $p->Reverse_primer;
@@ -776,7 +779,7 @@ sub _ReadPrimerFile {
       # legacy files don't have a header but start with the Primer_number
       if ( $fields[0] =~ m/\A\d+/ ) {
         %header = map { $expHeader[$_] => $_ } ( 0 .. $#expHeader );
-        say dump(\%header);
+        say dump( \%header );
       }
       # newer format has a header so skip to the next line after grabbing the header
       elsif ( !@NotFoundFields ) {
@@ -792,7 +795,8 @@ sub _ReadPrimerFile {
     my %data = map { $_ => $fields[ $header{$_} ] } ( keys %header );
     my $primerNumber = $data{Primer_number};
     if ( !looks_like_number($primerNumber) ) {
-      my $msg = sprintf( "Error: no value for expected header Primer_number at line: %d\n\n==> %s",
+      my $msg =
+        sprintf( "Error: no value for expected header Primer_number at line: %d\n\n==> %s",
         ( $lineCount + 1 ), $line );
       croak $msg;
     }
