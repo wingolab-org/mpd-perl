@@ -260,7 +260,7 @@ sub AddPrimers {
   state $check = compile( Object, Object );
   my ( $self, $primerObj ) = $check->(@_);
 
-  for my $p ( $primerObj->elements ) {
+  for my $p ( $primerObj->all_primers ) {
     $self->add_primer($p);
   }
 }
