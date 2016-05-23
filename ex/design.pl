@@ -6,7 +6,6 @@
 #
 # Description:
 
-use lib '/Users/twingo/software/mpd-perl/lib/';
 use 5.10.0;
 use warnings;
 use strict;
