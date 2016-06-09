@@ -74,6 +74,16 @@ sub as_bed_obj {
   return MPD::Bed->new( \@array );
 }
 
+sub WriteBedFileLetter {
+  state $check = compile( Object, Str );
+  my ( $self, $file ) = $check->(@_);
+
+  my $bedObj = $self->as_bed_obj();
+  my $fh     = path($file)->filehandle(">");
+
+  say {$fh} $bedObj->Entries_as_BedFileLetter;
+}
+
 sub WriteBedFile {
   state $check = compile( Object, Str );
   my ( $self, $file ) = $check->(@_);

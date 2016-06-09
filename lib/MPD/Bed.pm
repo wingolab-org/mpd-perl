@@ -62,6 +62,32 @@ has CoveredSite => (
   default => sub { {} },
 );
 
+sub Entries_as_BedFileLetter {
+  my $self = shift;
+
+  my @strs;
+
+  my $entriesAref = $self->Entries_as_aref();
+
+  for my $e (@$entriesAref) {
+    my $line;
+    if ( $e->[0] == 23 ) {
+      $line = "chr", join "\t", ( 'M', @{ $e->[ 1 .. $#{$e} ] } );
+    }
+    elsif ( $e->[0] == 24 ) {
+      $line = "chr", join "\t", ( 'X', @{ $e->[ 1 .. $#{$e} ] } );
+    }
+    elsif ( $e->[0] == 25 ) {
+      $line = "chr", join "\t", ( 'Y', @{ $e->[ 1 .. $#{$e} ] } );
+    }
+    else {
+      my $line = "chr" . join( "\t", @$e );
+    }
+    push @strs, $line;
+  }
+  return join( "\n", @strs );
+}
+
 sub Entries_as_BedFile {
   my $self = shift;
 
@@ -266,4 +292,3 @@ sub BUILDARGS {
 __PACKAGE__->meta->make_immutable;
 
 1;
-
