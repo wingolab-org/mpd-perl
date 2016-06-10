@@ -91,7 +91,7 @@ sub WriteBedFile {
   my $bedObj = $self->as_bed_obj();
   my $fh     = path($file)->filehandle(">");
 
-  say {$fh} $bedObj->Entries_as_BedFile;
+  say {$fh} $bedObj->Entries_as_BedFileLetter;
 }
 
 sub WriteOrderFile {

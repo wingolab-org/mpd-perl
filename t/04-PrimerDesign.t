@@ -20,8 +20,8 @@ my %reqFile = (
   MpdBinary   => './mpd',
   MpdIdx      => 'hg38.d14.sdx',
   dbSnpIdx    => 'ds_flat.sdx',
-  isPcrBinary => '/Users/twingo/local/bin/isPcr',
-  TwoBitFile  => '/Users/twingo/data/hg38.2bit',
+  isPcrBinary => "$ENV{HOME}/local/bin/isPcr",
+  TwoBitFile  => "$ENV{HOME}/data/hg38.2bit",
 );
 my %foundFile = map { $_ => path( $reqFile{$_} )->is_file() } ( keys %reqFile );
 
