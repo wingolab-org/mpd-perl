@@ -82,10 +82,10 @@ sub Entries_as_BedFileLetter {
 
   my $entriesAref = $self->Entries_as_aref();
   for my $e (@$entriesAref) {
-    if ($e->[0] == 23 ) {
+    if ( $e->[0] == 23 ) {
       $e->[0] = "M";
     }
-    elsif ($e->[0] == 24 ) {
+    elsif ( $e->[0] == 24 ) {
       $e->[0] = "X";
     }
     elsif ( $e->[0] == 25 ) {

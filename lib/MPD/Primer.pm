@@ -84,7 +84,6 @@ sub WriteBedFileLetter {
   say {$fh} $bedObj->Entries_as_BedFileLetter;
 }
 
-
 sub WriteBedFile {
   state $check = compile( Object, Str );
   my ( $self, $file ) = $check->(@_);
