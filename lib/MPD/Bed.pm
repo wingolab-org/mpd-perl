@@ -72,13 +72,13 @@ sub Entries_as_BedFileLetter {
   for my $e (@$entriesAref) {
     my $line;
     if ( $e->[0] == 23 ) {
-      $line = "chr", join "\t", ( 'M', @{ $e->[ 1 .. $#{$e} ] } );
+      $line = "chr" . join "\t", ( 'M', @{ $e->[ 1 .. $#{$e} ] } );
     }
     elsif ( $e->[0] == 24 ) {
-      $line = "chr", join "\t", ( 'X', @{ $e->[ 1 .. $#{$e} ] } );
+      $line = "chr" . join "\t", ( 'X', @{ $e->[ 1 .. $#{$e} ] } );
     }
     elsif ( $e->[0] == 25 ) {
-      $line = "chr", join "\t", ( 'Y', @{ $e->[ 1 .. $#{$e} ] } );
+      $line = "chr" . join "\t", ( 'Y', @{ $e->[ 1 .. $#{$e} ] } );
     }
     else {
       my $line = "chr" . join( "\t", @$e );
@@ -95,28 +95,6 @@ sub Entries_as_BedFile {
 
   my $entriesAref = $self->Entries_as_aref();
   for my $e (@$entriesAref) {
-    my $line = "chr" . join( "\t", @$e );
-    push @strs, $line;
-  }
-  return join( "\n", @strs );
-}
-
-sub Entries_as_BedFileLetter {
-  my $self = shift;
-
-  my @strs;
-
-  my $entriesAref = $self->Entries_as_aref();
-  for my $e (@$entriesAref) {
-    if ( $e->[0] == 23 ) {
-      $e->[0] = "M";
-    }
-    elsif ( $e->[0] == 24 ) {
-      $e->[0] = "X";
-    }
-    elsif ( $e->[0] == 25 ) {
-      $e->[0] = "Y";
-    }
     my $line = "chr" . join( "\t", @$e );
     push @strs, $line;
   }
