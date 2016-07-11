@@ -56,6 +56,7 @@ my $bedPt    = Path::Tiny->tempfile();
 my $tmpCmdPt = Path::Tiny->tempfile();
 my $primerPt = Path::Tiny->tempfile();
 my $isPcrPt  = Path::Tiny->tempfile();
+my $mpdOut   = Path::Tiny->tempfile();
 
 sub SayMppCmd {
   state $check = compile( Object, Str );
@@ -81,8 +82,14 @@ sub RunMpp {
   my $tmpCmdFh = $tmpCmdPt->filehandle(">");
   say {$tmpCmdFh} $self->SayMppCmd( $o->stringify );
 
-  my $cmd = sprintf( "%s < %s\n", $self->MpdBinary, $tmpCmdPt->stringify );
-  my $err = qx/$cmd/;
+  my $cmd = sprintf( "%s < %s > %s\n",
+    $self->MpdBinary, $tmpCmdPt->stringify, $mpdOut->stringify );
+  if ( system($cmd ) != 0 ) {
+    my $logFile = path("./mpd_error.log");
+    $mpdOut->copy( $logFile->stringify );
+    say sprintf( "Error executing mpd command; check log '%s'", $logFile->stringify );
+    exit(1);
+  }
 
   if ( $o->is_file ) {
     return 1;

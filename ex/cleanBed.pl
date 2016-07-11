@@ -20,15 +20,15 @@ my ( $file_name, $out_ext, $useLetterChr );
 # get options
 die "Usage: $0 -f <file_name> -o <out_ext> [--l|etter]\n"
   unless GetOptions(
-  'f|file=s'   => \$file_name,
-  'o|out=s'    => \$out_ext,
-  'l|letter=s' => \$useLetterChr,
+  'f|file=s' => \$file_name,
+  'o|out=s'  => \$out_ext,
+  'l|letter' => \$useLetterChr,
   )
   and $file_name
   and $out_ext;
 
 my $b     = MPD::Bed->new($file_name);
-my $outFh = path("$out_ext.bed");
+my $outFh = path("$out_ext.bed")->filehandle(">");
 
 if ($useLetterChr) {
   say {$outFh} $b->Entries_as_BedFileLetter();
