@@ -10,6 +10,7 @@ use 5.10.0;
 use warnings;
 use strict;
 use Getopt::Long;
+use Path::Tiny;
 use MPD;
 
 # variables
@@ -32,8 +33,11 @@ die
   and $out_ext;
 $verbose++ unless $act;
 
-$poolMin = 1   unless defined $poolMin;
-$dir     = "." unless defined $dir;
+$poolMin = 1 unless defined $poolMin;
+
+$dir = path($dir);
+
+if ( !$dir->is_dir ) { $dir->mkpath(); }
 
 my $m = MPD->new_with_config(
   {
@@ -46,7 +50,7 @@ my $m = MPD->new_with_config(
     PoolMin     => $poolMin,
     Debug       => $verbose,
     IterMax     => 2,
-    RunIsPcr    => undef,
+    RunIsPcr    => 0,
     Act         => $act,
     ProjectName => $out_ext,
     FwdAdapter  => 'ACACTGACGACATGGTTCTACA',
