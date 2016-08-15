@@ -18,7 +18,7 @@ use_ok($package) || print "Bail out!\n";
 
 my %reqFile = (
   BedFile     => 't/01-mpd.bed',
-  MpdBinary   => '/Users/twingo/software/mpd-perl/mpd',
+  MpdBinary   => "$ENV{HOME}/bin/mpd",
   MpdIdx      => 'hg38.d14.sdx',
   dbSnpIdx    => 'ds_flat.sdx',
   isPcrBinary => 'isPcr',
