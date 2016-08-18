@@ -11,6 +11,9 @@ use warnings;
 use strict;
 use Getopt::Long;
 use Path::Tiny;
+
+use lib '../lib';
+
 use MPD;
 
 # variables
@@ -43,6 +46,20 @@ my $m = MPD->new_with_config(
   {
     configfile  => $config_file,
     BedFile     => $bed_file,
+    OutExt      => $out_ext,
+    OutDir      => $dir,
+    InitTmMin   => 58,
+    InitTmMax   => 61,
+    PoolMin     => $poolMin,
+    Debug       => $verbose,
+    IterMax     => 2,
+    RunIsPcr    => 0,
+    Act         => $act,
+    ProjectName => $out_ext,
+    FwdAdapter  => 'ACACTGACGACATGGTTCTACA',
+    RevAdapter  => 'TACGGTAGCAGAGACTTGGTCT',
+    Offset      => 0,
+    Randomize   => 1,
   }
 );
 $m->RunAll();

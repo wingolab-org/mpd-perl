@@ -1,20 +1,10 @@
 Core:
-  a: 1
-  isPcrBinary:
-    val: /home/ec2-user/bin/x86_64/isPcr
-    type: str
-  TwoBitFile:
-    val: /mnt/annnotator/2bit/hg38.2bit
-    type: str
-  MpdBinary:
-    val: /home/ec2-user/bin/mpd
-    type: str
-  MpdIdx: 
-    val: hg38.d14.sdx
-    type: str
-  dbSnpIdx:
-    val: ds_flat.sdx
-    type: str
+  Act: 1
+  isPcrBinary: /home/ec2-user/bin/x86_64/isPcr
+  TwoBitFile: /mnt/annnotator/2bit/hg38.2bit
+  MpdBinary: /home/ec2-user/bin/mpd
+  MpdIdx: hg38.d14.sdx
+  dbSnpIdx: ds_flat.sdx
 
 User:
   Basic:

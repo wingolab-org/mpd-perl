@@ -8,7 +8,6 @@ use Moose 2;
 use MooseX::Types::Path::Tiny qw/ AbsPath AbsFile File /;
 use namespace::autoclean;
 
-use Carp qw/ croak /;
 use Type::Params qw/ compile /;
 use Types::Standard qw/ :types /;
 use Scalar::Util qw/ reftype /;
@@ -18,6 +17,8 @@ use Try::Tiny;
 use Data::Dump qw/ dump /; # for debugging
 
 use MPD::Bed::Raw;
+
+with 'MPD::Role::Message';
 
 our $VERSION = '0.001';
 
@@ -133,7 +134,7 @@ sub SiteNames {
 # _processBedFile returns a matrix of the bedfile coordinates
 sub _processBedFile {
   state $check = compile( Str, Str );
-  my ( $class, $bedFile ) = $check->(@_);
+  my ( $self, $bedFile ) = $check->(@_);
 
   my @array;
 
@@ -171,22 +172,21 @@ sub _processBedFile {
         push @array, $b;
       }
       catch {
-        my $msg = "In bedfile, '$bedFile', ignoring line: $line";
-        say $msg;
+        $self->log('info', "ignoring line: $line");
       };
 
     }
     else {
-      my $msg = sprintf( "Error Bedfile missing chr, start, or stop: %s", $line );
+      $self->log('fatal', sprintf( "Bedfile missing chr, start, or stop: %s", $line ) );
     }
   }
-  return $class->_processBedObjs( \@array );
+  return $self->_processBedObjs( \@array );
 }
 
 # _processBedObjs returns a matrix of the bedfile coordinates
 sub _processBedObjs {
   state $check = compile( Str, ArrayRef );
-  my ( $class, $bedObjAref ) = $check->(@_);
+  my ( $self, $bedObjAref ) = $check->(@_);
 
   my %sites;
 
@@ -196,13 +196,13 @@ sub _processBedObjs {
       $sites{$chr}{$i} = $b->Name;
     }
   }
-  return $class->_bedSites( \%sites );
+  return $self->_bedSites( \%sites );
 }
 
 # _bedSites takes a hash of sites and creates a unique bedfile as an arrayref
 sub _bedSites {
   state $check = compile( Str, HashRef );
-  my ( $class, $sitesHref ) = $check->(@_);
+  my ( $self, $sitesHref ) = $check->(@_);
 
   my ( %coveredSite, %coveredChr, @bed );
   my @chrs = ( 1 .. 26, 'M', 'X', 'Y' );
@@ -279,13 +279,11 @@ sub BUILDARGS {
       return $class->SUPER::BUILDARGS( $_[0] );
     }
     else {
-      my $msg = "Error: Construct MPD::Bed object with either a hashref or bed file";
-      croak($msg);
+      return $class->log('fatal', "Construct MPD::Bed object with either a hashref or bed file");
     }
   }
   else {
-    my $msg = "Error: Construct MPD::Bed object with either a hashref or bed file";
-    croak($msg);
+    return $class->log('fatal', "Construct MPD::Bed object with either a hashref or bed file");
   }
 }
 

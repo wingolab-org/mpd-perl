@@ -7,7 +7,6 @@ use 5.10.0;
 use Moose 2;
 use namespace::autoclean;
 
-use Carp qw/ croak /;
 use Path::Tiny;
 use Type::Params qw/ compile /;
 use Types::Standard qw/ :types /;
@@ -16,6 +15,8 @@ use Scalar::Util qw/ reftype /;
 use Data::Dump qw/ dump /; # for debugging
 
 use MPD::Psl::Raw;
+
+with 'MPD::Role::Message';
 
 our $VERSION = '0.001';
 
@@ -37,9 +38,7 @@ sub DegenerateMatches {
   my ( @degenPairs, %hash );
 
   if ( $self->no_matches ) {
-    my $msg = "Error - no matches to process for DegenerateMatches()";
-    say STDERR $msg;
-    return;
+    return $self->log('warn', "No matches to process for DegenerateMatches()");
   }
 
   for my $m ( $self->all_matches ) {
@@ -55,7 +54,7 @@ sub DegenerateMatches {
         else {
           my $msg = sprintf( "Warning: unrecognized chromosome '%s' for match: %s",
             $m->tName, $m->qName );
-          say STDERR $msg;
+          $self->log('warn', $msg);
         }
       }
     }
@@ -96,15 +95,13 @@ sub BUILDARGS {
       return $class->SUPER::BUILDARGS( $_[0] );
     }
     else {
-      my $msg =
-        "Error: Construct MPD::Primer object with either a hashref, arrayref of hashrefs, or primer file";
-      croak($msg);
+      return $class->log('fatal', 'Error: Construct MPD::Primer object with either'
+      . ' a hashref, arrayref of hashrefs, or primer file');
     }
   }
   else {
-    my $msg =
-      "Error: Construct MPD::Primer object with either a hashref, arrayref of hashrefs, or primer file";
-    croak($msg);
+    return $class->log('fatal', 'Error: Construct MPD::Primer object with either'
+     .' a hashref, arrayref of hashrefs, or primer file');
   }
 }
 

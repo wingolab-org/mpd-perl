@@ -1,5 +1,5 @@
 beanstalkd:
-  host: 172.31.56.119
+  host: 172.31.61.62
   port: 11300
   tubes:
     annotation:

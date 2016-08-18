@@ -8,7 +8,6 @@ use Moose 2;
 use MooseX::Types::Path::Tiny qw/ AbsPath AbsFile File /;
 use namespace::autoclean;
 
-use Carp qw/ croak /;
 use Excel::Writer::XLSX;
 use JSON;
 use Path::Tiny;
@@ -28,7 +27,7 @@ use MPD::PrimerDesign;
 our $VERSION = '0.001';
 my $time_now = ctime();
 
-with 'MPD::Role::ConfigFromFile';
+with 'MPD::Role::ConfigFromFile', 'MPD::Role::Message';
 
 # attr for necessary data files
 has BedFile => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
@@ -125,6 +124,26 @@ has KeepPrimers => (
   default => sub { [] },
 );
 
+has verbose => (is => 'ro', default => 1);
+
+has publisher => (is => 'ro');
+sub BUILD {
+  my $self = shift;
+
+  if($self->publisher) {
+    $self->setPublisher($self->publisher);
+  }
+
+  $self->setLogPath(path($self->OutDir)->child($self->OutExt . ".log")->stringify);
+
+  if($self->Debug) {
+    $self->setLogLevel('DEBUG');
+  }
+
+  if($self->verbose) {
+    $self->setVerbosity(1);
+  }
+}
 sub RunAll {
   my $self = shift;
   $self->FindBestCoverage(1);
@@ -137,7 +156,7 @@ sub PrintPrimerData {
 
   if ( !$self->no_primer ) {
 
-    if ( $self->Debug ) {
+    if($self->Debug) {
       say "Writing final primer design.";
     }
 
@@ -163,13 +182,15 @@ sub PrintPrimerData {
     $p->WriteIsPcrFile( $isPcrPt->stringify );
   }
   else {
-    say "No Primers written. This might be a dry run.";
+    $self->log('warn', 'No Primers written. This might be a dry run.');
   }
 }
 
 # FindBestCoverage - for testing purposes
 sub FindBestCoverage {
   my ( $self, $act ) = @_;
+
+  my $iterTotal = $self->IterMax + 1;
 
   while ( $self->_Iter < $self->IterMax ) {
     $self->_runPrimerDesign( $self->PoolMin );
@@ -180,7 +201,10 @@ sub FindBestCoverage {
     $self->_incrTmStep;
     $self->_runPrimerDesign( $self->PoolMin );
     $self->_incrIter;
+
+    $self->publishProgress( sprintf "%0.2f", ( $self->_Iter / $iterTotal ) * 100 );
   }
+
   $self->_runPrimerDesign(1);
   return $self->PrintPrimerData( $self->OutExt );
 }
@@ -206,11 +230,11 @@ sub _pcrParams {
   }
 
   if ( $self->UnCovered() ) {
-    say "PCR Params: using uncovered bed data";
+    $self->log('info', "PCR Params: using uncovered bed data");
     $attrs{Bed} = $self->UnCovered();
   }
   else {
-    say "PCR Params: using original bed data";
+    $self->log('info', "PCR Params: using original bed data");
     $attrs{Bed} = $self->Bed();
   }
   say "======================" if $self->Debug;
@@ -323,9 +347,7 @@ sub _keepPoolPrimers {
   my $self = shift;
 
   if ( $self->no_pool ) {
-    my $msg = "no pooled primers";
-    say $msg;
-    return;
+    return $self->log('info', "no pooled primers");
   }
 
   for my $aref ( $self->all_pools ) {
@@ -374,25 +396,24 @@ sub _saveJsonData {
 sub _printPrimerSummary {
   my ( $self, $primer, $labelStr ) = @_;
 
-  say $labelStr;
+  $self->log('info', $labelStr);
 
   if ( !defined $primer ) {
-    say ">> No Primers <<";
+    $self->log('info', ">> No Primers <<");
   }
   elsif ( reftype $primer eq 'ARRAY' ) {
     my $count = 1;
     for my $primerObj (@$primer) {
-      say "--- Primer Group $count ---";
-      say $primerObj->Summarize_as_str();
+      $self->log('info', "--- Primer Group $count ---");
+      $self->log('info', $primerObj->Summarize_as_str());
       $count++;
     }
   }
   elsif ( blessed $primer eq 'MPD::Primer' ) {
-    say $primer->Summarize_as_str();
+    $self->log('info', $primer->Summarize_as_str() );
   }
   else {
-    my $msg = "unrecognized thing to print";
-    croak $msg;
+    $self->log('fatal', "unrecognized thing to print");
   }
 }
 

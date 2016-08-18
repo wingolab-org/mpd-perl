@@ -9,7 +9,6 @@ use Moose::Util::TypeConstraints;
 use MooseX::Types::Path::Tiny qw/ AbsPath AbsFile /;
 use namespace::autoclean;
 
-use Carp qw/ croak /;
 use Path::Tiny;
 use Type::Params qw/ compile /;
 use Types::Standard qw/ :types /;
@@ -18,6 +17,8 @@ use Data::Dump qw/ dump /; # for debugging
 
 use MPD::Primer;
 use MPD::Psl;
+
+with 'MPD::Role::Message';
 
 our $VERSION = '0.001';
 
@@ -55,7 +56,7 @@ sub Run {
     else {
       my $msg =
         sprintf( "Error: Failed to write isPcr Primer File: %s", $tempIsPcrPrimerFile );
-      croak $msg;
+      $self->log('fatal', $msg);
     }
   }
   my $runLog = qx/$cmd/;
@@ -64,8 +65,8 @@ sub Run {
     return 1;
   }
   else {
-    say STDERR "Error running isPcr";
-    say STDERR $runLog;
+    $self->log('warn', "Error running isPcr");
+    $self->log('warn', $runLog);
     return;
   }
 }

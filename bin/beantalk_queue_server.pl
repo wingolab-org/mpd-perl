@@ -11,8 +11,9 @@ use warnings;
 use strict;
 use Getopt::Long;
 use Path::Tiny;
-use MPD;
 
+use lib '../lib';
+use MPD;
 #!/usr/bin/env perl
 # Name:           snpfile_annotate_mongo_redis_queue.pl
 # Description:
@@ -31,12 +32,11 @@ use warnings;
 
 use Try::Tiny;
 
-use lib './lib';
+use Parallel::ForkManager;
 
 use Log::Any::Adapter;
 use File::Basename;
 use DDP;
-use Interface;
 
 use Beanstalk::Client;
 use 5.10.0;
@@ -54,16 +54,15 @@ use YAML::XS qw/LoadFile/;
 #for choosing max connections based on available resources
 
 # max of 1 job at a time for now
-my $pm = Parallel::ForkManager->new(1);
 
 my $DEBUG = 0;
-my $conf = LoadFile('./config/queue.yaml');
+my $conf = LoadFile('../config/queue.yaml');
 
 # Beanstalk servers will be sharded
 my $beanstalkHost  = $conf->{beanstalk_host_1};
 my $beanstalkPort  = $conf->{beanstalk_port_1};
 
-my $configPathBaseDir = "./config/web/";
+my $configPathBaseDir = "../config/web/";
 
 my $verbose = 1;
 
@@ -83,54 +82,54 @@ my $beanstalkEvents = Beanstalk::Client->new({
   decoder => sub { @{decode_json(shift)} },
 });
 
-while(my $job = $beanstalk->reserve) {
-  # Parallel ForkManager used only to throttle number of jobs run in parallel
-  # cannot use run_on_finish with blocking reserves, use try catch instead
-  # Also using forks helps clean up leaked memory from LMDB_File
-  # Unfortunately, parallel fork manager doesn't play nicely with try tiny
-  # prevents anything within the try from executing
-  my $jobDataHref;
-    
-  try {
-    $jobDataHref = decode_json( $job->data );
+my $pm = Parallel::ForkManager->new(8);
+
+while(my $job = $beanstalk->reserve ) {
+  $pm->start and next;
+    say "starting job " . $job->id;
+  
+    # Parallel ForkManager used only to throttle number of jobs run in parallel
+    # cannot use run_on_finish with blocking reserves, use try catch instead
+    # Also using forks helps clean up leaked memory from LMDB_File
+    # Unfortunately, parallel fork manager doesn't play nicely with try tiny
+    # prevents anything within the try from executing
+    my $jobDataHref = decode_json( $job->data );
   
     $beanstalkEvents->put({ priority => 0, data => encode_json{
       event => 'started',
-      # jobId   => $jobDataHref->{_id},
       queueId => $job->id,
     }  } );
 
-    my $statistics = handleJob($jobDataHref, $job->id);
-    
-    # Signal completion before completion actually occurs via delete
-    # To be conservative; since after delete message is lost
-    $beanstalkEvents->put({ priority => 0, data =>  encode_json({
-      event => 'completed',
-      queueId => $job->id,
-      # jobId   => $jobDataHref->{_id},
-      result  => $statistics,
-    }) } );
-    
-     say "completed job with queue id " . $job->id;
-
-    $beanstalk->delete($job->id);
-  } catch {
-    say "job ". $job->id . " failed due to $_";
+    my ($err, $statistics) = handleJob($jobDataHref, $job->id);
       
-    # Don't store the stack
-    my $reason = substr($_, 0, index($_, 'at'));
+    if($err) {
+      say "job " . $job->id . " failed with $err";
+      
+      $beanstalkEvents->put( { priority => 0, data => encode_json({
+        event => 'failed',
+        queueId => $job->id,
+        reason => $err,
+      }) } );
 
-    # Signal before bury, because we always want to record that the job failed
-    # even if burying fails
-    $beanstalkEvents->put( { priority => 0, data => encode_json({
-      event => 'failed',
-      reason => $reason,
-      queueId => $job->id,
-    }) } );
+      $beanstalk->bury($job->id);
+    } else {
+      say "completed job with queue id " . $job->id;
 
-    $job->bury;
-  } 
+      # Signal completion before completion actually occurs via delete
+      # To be conservative; since after delete message is lost
+      $beanstalkEvents->put({ priority => 0, data =>  encode_json({
+        event => 'completed',
+        queueId => $job->id,
+        result  => $statistics,
+      }) } ); 
+
+      $beanstalk->delete($job->id);
+    }
+
+  $pm->finish(0);
 }
+
+$pm->wait_all_children();
  
 sub handleJob {
   my $submittedJob = shift;
@@ -138,80 +137,28 @@ sub handleJob {
 
   my $failed;
 
-  say "in handle job, jobData is";
-  p $submittedJob;
-
   my $inputHref = coerceInputs($submittedJob, $queueId);
 
   try {
-    $inputHref = coerceInputs($submittedJob, $queueId);
-
-    if ($verbose) {
-      say "The user job data sent to annotator is: ";
-      p $inputHref;
-    }
-
-    # variables
-    my ( $verbose, $act, $dir, $prn, $poolMin, $bed_file, $config_file, $out_ext );
-
-    if( !$inputHref->{inputFilePath} || $inputHref->{configfile} || $inputHref->{name} || $inputHref->{poolMin} ) {
-      die "Required fields not provided";
-    }
-
-    $poolMin = 1 unless defined $poolMin;
-
-    $dir = path($dir);
+    my $dir = path($inputHref->{OutDir});
 
     if ( !$dir->is_dir ) { $dir->mkpath(); }
 
-    my $m = MPD->new_with_config(
-      {
-        configfile  => $config_file,
-        BedFile     => $bed_file,
-        OutExt      => $out_ext,
-        OutDir      => $dir,
-        InitTmMin   => 58,
-        InitTmMax   => 61,
-        PoolMin     => $poolMin,
-        Debug       => $verbose,
-        IterMax     => 2,
-        RunIsPcr    => 0,
-        Act         => $act,
-        ProjectName => $out_ext,
-        FwdAdapter  => 'ACACTGACGACATGGTTCTACA',
-        RevAdapter  => 'TACGGTAGCAGAGACTTGGTCT',
-        Offset      => 0,
-        Randomize   => 1,
-        a => 1
-      }
-    );
-    $m->RunAll();
-    # create the annotator
-    my $annotate_instance = Interface->new($inputHref);
-    my $result            = $annotate_instance->annotate;
+    my $m = MPD->new_with_config($inputHref);
+    
+    my $result = $m->RunAll();
 
-    if(!defined $result) {
-      $log->error('Nothing returned from annotator');
-      die 'Error: Nothing returned from annotator';
-    }
-
-    return $result;
+    return (undef, $result);
   } catch {
-    $log->error($_);
-
-    my $indexOfConstructor = index($_, "Seq::");
+    my $indexOfConstructor = index($_, "MPD::");
     
     if(~$indexOfConstructor) {
       $failed = substr($_, 0, $indexOfConstructor);
     } else {
-      my $end = length($_);
-      if($end > 100) {
-        $end = 100;
-      }
-      $failed = substr($_, 0, $end);
+      $failed = $_;
     }
 
-    die $failed;
+    return ($_, undef);
   };
 }
 
@@ -229,15 +176,27 @@ sub coerceInputs {
   my $config = LoadFile($configFilePath);
 
   my $coreHref = $config->{Core};
-  my $userHref = %{ $config->{User}{Basic}, $config->{User}{Advanced} };
 
-  my $totalConfig = %{$coreHref, $userHref};
+
+  ########## Gather basic and advanced options ###################
+  my $basic = $config->{User}{Basic};
+  my $advanced = $config->{User}{Advanced};
+
+  my %basicOptions = map { $_ => $basic->{$_}{val} } keys %$basic;
+  my %advancedOptions = map { $_ => $advanced->{$_}{val} } keys %$advanced;
+
+  my $userBasic = $jobDetailsHref->{options}{Basic};
+  my $userAdvanced = $jobDetailsHref->{options}{Advanced};
+
+  my %userBasicOptions = map { $_ => $userBasic->{$_}{val} } keys %$userBasic;
+  my %userAdvancedOptions = map { $_ => $userAdvanced->{$_}{val} } keys %$userAdvanced;
 
   # right hand precedence;
 
-  $totalConfig = merge($totalConfig, $jobDetailsHref->{options});
-
-  $totalConfig{publisher} = {
+  my $mergedConfig = merge($coreHref, \%basicOptions, \%advancedOptions, 
+    \%userBasicOptions, \%userAdvancedOptions);
+  
+  $mergedConfig->{publisher} = {
     server => $conf->{beanstalkd}{host} . ':' . $conf->{beanstalkd}{port},
     queue  => $conf->{beanstalkd}{tubes}{annotation}{events},
     messageBase => {
@@ -247,9 +206,41 @@ sub coerceInputs {
     }
   };
 
-  return $totalConfig;
+  $mergedConfig->{configfile} = $configFilePath;
+  $mergedConfig->{BedFile} = $jobDetailsHref->{ inputFilePath };
+  $mergedConfig->{OutExt} = $jobDetailsHref->{name};
+  $mergedConfig->{OutDir} = $jobDetailsHref->{dirs}{out};
+  $mergedConfig->{ProjectName} = $jobDetailsHref->{name};
+
+  if($verbose) {
+    say "mergedConfig is";
+    p $mergedConfig;
+  }
+
+  return $mergedConfig;
 }
 
+
+      # {
+      #   configfile  => $config_file,
+      #   BedFile     => $bed_file,
+      #   OutExt      => $out_ext,
+      #   OutDir      => $dir,
+      #   InitTmMin   => 58,
+      #   InitTmMax   => 61,
+      #   PoolMin     => $poolMin,
+      #   Debug       => $verbose,
+      #   IterMax     => 2,
+      #   RunIsPcr    => 0,
+      #   Act         => $act,
+      #   ProjectName => $out_ext,
+      #   FwdAdapter  => 'ACACTGACGACATGGTTCTACA',
+      #   RevAdapter  => 'TACGGTAGCAGAGACTTGGTCT',
+      #   Offset      => 0,
+      #   Randomize   => 1,
+      #   a => 1
+      # }
+    
 sub getConfigFilePath {
   my $assembly = shift;
 

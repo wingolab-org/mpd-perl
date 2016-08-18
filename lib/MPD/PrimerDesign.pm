@@ -8,7 +8,6 @@ use Moose 2;
 use MooseX::Types::Path::Tiny qw/ AbsPath AbsFile File /;
 use namespace::autoclean;
 
-use Carp qw/ croak /;
 use Excel::Writer::XLSX;
 use Path::Tiny;
 use Type::Params qw/ compile /;
@@ -21,6 +20,8 @@ use MPD::Bed;
 use MPD::isPcr;
 use MPD::Primer;
 use MPD::Psl;
+
+with "MPD::Role::Message";
 
 our $VERSION = '0.001';
 my $time_now = ctime();
@@ -85,10 +86,7 @@ sub RunMpp {
   my $cmd = sprintf( "%s < %s > %s\n",
     $self->MpdBinary, $tmpCmdPt->stringify, $mpdOut->stringify );
   if ( system($cmd ) != 0 ) {
-    my $logFile = path("./mpd_error.log");
-    $mpdOut->copy( $logFile->stringify );
-    say sprintf( "Error executing mpd command; check log '%s'", $logFile->stringify );
-    exit(1);
+    return $self->log('fatal', "Error creating temp file; check log");
   }
 
   if ( $o->is_file ) {
@@ -106,8 +104,7 @@ sub UniqPrimers {
 
   my $ok = $self->RunMpp( $primerPt->stringify );
   if ( !$ok ) {
-    my $msg = "Error running mpd binary";
-    croak $msg;
+    return $self->log('fatal', "Error running mpd binary");
   }
 
   my $primer = MPD::Primer->new( $primerPt->stringify );
