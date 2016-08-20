@@ -11,6 +11,9 @@ use warnings;
 use strict;
 use Getopt::Long;
 use Path::Tiny;
+
+use lib '../lib';
+
 use MPD;
 
 # variables
