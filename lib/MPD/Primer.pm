@@ -104,12 +104,17 @@ sub WriteOrderFile {
     return;
   }
 
+  if ( eval("require 'Excel::Writer::XLSX'") ) {
+    die "Cannot find 'Excel::Writer::XLSX'";
+  }
+
   my @header      = ( "WellPosition", "Name", "Sequence", "Notes" );
   my $orderHref   = $self->OrderAsHref($optHref);
   my $time_now    = ( exists $optHref->{time} ) ? $optHref->{time} : ctime();
   my $primerCount = 0;
 
   my $workbook = Excel::Writer::XLSX->new($file);
+
   $workbook->set_properties(
     title    => "Multiplex Primers",
     author   => 'The MPD package',
