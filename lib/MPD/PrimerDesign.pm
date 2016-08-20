@@ -52,11 +52,16 @@ has PadSize       => ( is => 'ro', isa => 'Int', default => 60,  required => 1 )
 has TmStep        => ( is => 'ro', isa => 'Num', default => 0.5, required => 1 );
 
 # Temporary Files
-my $bedPt    = Path::Tiny->tempfile();
-my $tmpCmdPt = Path::Tiny->tempfile();
-my $primerPt = Path::Tiny->tempfile();
-my $isPcrPt  = Path::Tiny->tempfile();
-my $mpdOut   = Path::Tiny->tempfile();
+#my $bedPt    = Path::Tiny->tempfile();
+#my $tmpCmdPt = Path::Tiny->tempfile();
+#my $primerPt = Path::Tiny->tempfile();
+#my $isPcrPt  = Path::Tiny->tempfile();
+#my $mpdOut   = Path::Tiny->tempfile();
+my $bedPt    = path("$$.bed");
+my $tmpCmdPt = path("$$.cmd");
+my $primerPt = path("$$.primer");
+my $isPcrPt  = path("$$.isPcr");
+my $mpdOut   = path("$$.mpdOut");
 
 sub SayMppCmd {
   state $check = compile( Object, Str );

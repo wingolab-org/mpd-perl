@@ -1,8 +1,8 @@
 ---
 BedFile: ex/markers.txt.bed
-isPcrBinary: isPcr
+isPcrBinary: /Users/twingo/local/bin/isPcr
 TwoBitFile: hg38.2bit
-MpdBinary: ../mpd-c/build/mpd
+MpdBinary: mpd
 MpdIdx: hg38.d14.sdx
 dbSnpIdx: ds_flat.sdx
 
