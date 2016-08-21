@@ -182,14 +182,14 @@ sub coerceInputs {
   my $basic = $config->{User}{Basic};
   my $advanced = $config->{User}{Advanced};
 
-  my %basicOptions = map { $_ => $basic->{$_}{val} } keys %$basic;
-  my %advancedOptions = map { $_ => $advanced->{$_}{val} } keys %$advanced;
+  my %basicOptions = map { $basic->{$_}{name} => $basic->{$_}{val} } keys %$basic;
+  my %advancedOptions = map { $advanced->{$_}{name} => $advanced->{$_}{val} } keys %$advanced;
 
   my $userBasic = $jobDetailsHref->{options}{Basic};
   my $userAdvanced = $jobDetailsHref->{options}{Advanced};
 
-  my %userBasicOptions = map { $_ => $userBasic->{$_}{val} } keys %$userBasic;
-  my %userAdvancedOptions = map { $_ => $userAdvanced->{$_}{val} } keys %$userAdvanced;
+  my %userBasicOptions = map { $userBasic->{$_}{name} => $userBasic->{$_}{val} } keys %$userBasic;
+  my %userAdvancedOptions = map { $userAdvanced->{$_}{name} => $userAdvanced->{$_}{val} } keys %$userAdvanced;
 
   # right hand precedence;
 
