@@ -8,65 +8,109 @@ Core:
 
 User:
   Basic:
-      CoverageThreshold:
+    -
+        name: CoverageThreshold
         val: 0.8
         type: int
-      PrimerSizeMin:
+        desc: "How much of the target do you want to be covered for us to call it ok."
+    - 
+        name: PrimerSizeMin
         val: 17
         type: int
-      PrimerSizeMax:
+        desc: "Minimum primer size (in base pairs)."
+    -
+        name: PrimerSizeMax
         val: 27
         type: int
-      PadSize:
-        val: 60
-        type: int
-      PoolMax: 
-        val: 10
-        type: int
-      PoolMin:
-        val: 5
-        type: int
-      AmpSizeMax:
+        desc: "Maximum primer size (in base pairs)."      
+    -
+        name: AmpSizeMax
         val: 260
         type: int
-      AmpSizeMin:
+        max: 1000
+        desc: "Maximum amplicon size for each PCR reaction (max value: 1000)."     
+    -
+        name: AmpSizeMin
         val: 230
         type: int
-      TmMax:
-        val: 62
-        type: float
-      TmMin:
-        val: 57
-        type: float
-      GcMax:
-        val: 0.7
-        type: float
-      GcMin:
-        val: 0.3
-        type: float
-      Iter:
-        val: 2
+        min: 100
+        desc: "Minimum amplicon size for each PCR reaction (min value: 100)."
+    - 
+        name: PadSize
+        val: 60
         type: int
-      IncrTm:
-        val: 1
-        type: int
-      IncrTmStep:
-        val: 1
-        type: int
-      IncrAmpSize:
+        desc: "The size of the flanking region that is used to design the primer."
+    -
+        name: PoolMax
         val: 10
         type: int
-    
+        desc: "Maximum number of primers in a pool (max value: 10)."
+        max: 10
+
   Advanced:
-      FwdAdapter:
+    -
+        name: TmMax
+        val: 62
+        type: float
+        desc: "Maximum primer melting temperature (Tm) of your primer."      
+    -
+        name: TmMin
+        val: 57
+        type: float
+        desc: "Maximum primer melting temperature (Tm) of your primer."
+    - 
+        name: GcMax
+        val: 0.7
+        type: float
+        max: 1
+        min: 0
+        desc: "Maximum percent GC content of your primer."
+    - 
+        name: GcMin
+        val: 0.3
+        type: float
+        max: 1
+        min: 0
+        desc: "Minimum percent GC content of your primer."
+    -
+        name: Iter
+        val: 2
+        type: int
+        desc: "Number of iterations used to find best primers."
+    -
+        name: IncrTm
+        val: 1
+        type: int
+        desc: "How many times to increment melting temperature."
+    -
+        name: IncrTmStep
+        val: 1
+        type: int
+        desc: "By how much to increment melting temperature."
+    -
+        name: IncrAmpSize
+        val: 10
+        type: int
+        desc: "If a primer isn't found for the AmpSize, iterate by this length."
+    -
+        name: PoolMin
+        val: 5
+        type: int
+        desc: "Minimum number of primers in a pool (min value: 3)."
+        
+    -   min: 3
+        name: FwdAdapter
         val: ACACTGACGACATGGTTCTACA
         type: str
-      RevAdapter:
+    -
+        name: RevAdapter
         val: TACGGTAGCAGAGACTTGGTCT
         type: str
-      Offset:
-        val: 0
-        type: bool
-      Randomize:
+    # -   name: Offset
+    #     val: 0
+    #     type: bool
+    -
+        name: Randomize
         val: 1
         type: bool
+        desc: "To minimize batch effects, plate primer pools in random order"
