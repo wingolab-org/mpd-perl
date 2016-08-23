@@ -111,6 +111,6 @@ User:
     #     type: bool
     -
         name: Randomize
-        val: 1
+        val: true
         type: bool
         desc: "To minimize batch effects, plate primer pools in random order"
