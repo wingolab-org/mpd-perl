@@ -12,7 +12,7 @@ User:
         name: CoverageThreshold
         val: 0.8
         type: int
-        desc: "How much of the target do you want to be covered for us to call it ok."
+        desc: "Required target coverage percentage"
     -
         name: AmpSizeMax
         val: 260
@@ -37,7 +37,7 @@ User:
         name: PadSize
         val: 60
         type: int
-        desc: "The size of the flanking region that is used to design the primer."
+        desc: "Size of the flanking region that is used to design the primer."
     - 
         name: PrimerSizeMin
         val: 17
@@ -52,26 +52,26 @@ User:
         name: TmMax
         val: 62
         type: float
-        desc: "Maximum primer melting temperature (Tm) of your primer."      
+        desc: "Maximum primer melting temperature (Tm)."      
     -
         name: TmMin
         val: 57
         type: float
-        desc: "Maximum primer melting temperature (Tm) of your primer."
+        desc: "Maximum primer melting temperature (Tm)."
     - 
         name: GcMax
         val: 0.7
         type: float
         max: 1
         min: 0
-        desc: "Maximum percent GC content of your primer."
+        desc: "Maximum primer percent GC content."
     - 
         name: GcMin
         val: 0.3
         type: float
         max: 1
         min: 0
-        desc: "Minimum percent GC content of your primer."
+        desc: "Minimum percent primer GC content."
     -
         name: Iter
         val: 2
@@ -102,15 +102,17 @@ User:
         name: FwdAdapter
         val: ACACTGACGACATGGTTCTACA
         type: str
+        desc: "Forward adapter sequence"
     -
         name: RevAdapter
         val: TACGGTAGCAGAGACTTGGTCT
         type: str
+        desc: "Reverse adapter sequence"
     # -   name: Offset
     #     val: 0
     #     type: bool
     -
         name: Randomize
-        val: 1
+        val: true
         type: bool
         desc: "To minimize batch effects, plate primer pools in random order"
