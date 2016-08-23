@@ -146,8 +146,11 @@ sub handleJob {
 
     my $m = MPD->new_with_config($inputHref);
     
-    my $result = $m->RunAll();
+    say "MPD is ";
+    p $m;
 
+    my $result = $m->RunAll();
+    
     return (undef, $result);
   } catch {
     my $indexOfConstructor = index($_, "MPD::");
@@ -182,20 +185,28 @@ sub coerceInputs {
   my $basic = $config->{User}{Basic};
   my $advanced = $config->{User}{Advanced};
 
-  my %basicOptions = map { $basic->{$_}{name} => $basic->{$_}{val} } keys %$basic;
-  my %advancedOptions = map { $advanced->{$_}{name} => $advanced->{$_}{val} } keys %$advanced;
+  my %basicOptions = map { $_->{name} => $_->{val} } @$basic;
+  my %advancedOptions = map { $_->{name} => $_->{val} } @$advanced;
 
   my $userBasic = $jobDetailsHref->{options}{Basic};
   my $userAdvanced = $jobDetailsHref->{options}{Advanced};
 
-  my %userBasicOptions = map { $userBasic->{$_}{name} => $userBasic->{$_}{val} } keys %$userBasic;
-  my %userAdvancedOptions = map { $userAdvanced->{$_}{name} => $userAdvanced->{$_}{val} } keys %$userAdvanced;
+  my %userBasicOptions = map { $_->{name} => $_->{val} } @$userBasic;
+  my %userAdvancedOptions = map { $_->{name} => $_->{val} } @$userAdvanced;
 
   # right hand precedence;
 
   my $mergedConfig = merge($coreHref, \%basicOptions, \%advancedOptions, 
     \%userBasicOptions, \%userAdvancedOptions);
   
+
+  # JSON::PP::Boolean will not pass moose constraint for Bool
+  foreach my $val (values %$mergedConfig) {
+    if(ref $val eq 'JSON::PP::Boolean') {
+      $val = !!$val;
+    }
+  }
+
   $mergedConfig->{publisher} = {
     server => $conf->{beanstalkd}{host} . ':' . $conf->{beanstalkd}{port},
     queue  => $conf->{beanstalkd}{tubes}{annotation}{events},
@@ -211,11 +222,6 @@ sub coerceInputs {
   $mergedConfig->{OutExt} = $jobDetailsHref->{name};
   $mergedConfig->{OutDir} = $jobDetailsHref->{dirs}{out};
   $mergedConfig->{ProjectName} = $jobDetailsHref->{name};
-
-  if($verbose) {
-    say "mergedConfig is";
-    p $mergedConfig;
-  }
 
   return $mergedConfig;
 }
