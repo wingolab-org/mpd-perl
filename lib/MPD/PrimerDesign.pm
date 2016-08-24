@@ -91,7 +91,7 @@ sub RunMpp {
   my $cmd = sprintf( "%s < %s > %s\n",
     $self->MpdBinary, $tmpCmdPt->stringify, $mpdOut->stringify );
   if ( system($cmd ) != 0 ) {
-    return $self->log('fatal', "Error creating temp file; check log");
+    return $self->log( 'fatal', "Error creating temp file; check log" );
   }
 
   if ( $o->is_file ) {
@@ -109,7 +109,7 @@ sub UniqPrimers {
 
   my $ok = $self->RunMpp( $primerPt->stringify );
   if ( !$ok ) {
-    return $self->log('fatal', "Error running mpd binary");
+    return $self->log( 'fatal', "Error running mpd binary" );
   }
 
   my $primer = MPD::Primer->new( $primerPt->stringify );

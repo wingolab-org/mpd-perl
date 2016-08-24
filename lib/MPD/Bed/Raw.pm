@@ -58,12 +58,12 @@ sub BUILD {
   if ( $self->Start > $self->End ) {
     my $msg = sprintf( "Error: Bed entry, start > stop: %s:%s-%s",
       $self->Chr, $self->Start, $self->End );
-    return $self->log('fatal', $msg);
+    return $self->log( 'fatal', $msg );
   }
   if ( $self->Size == 0 ) {
     my $msg = sprintf( "Warn: Bed entry, start == stop: %s:%s-%s",
       $self->Chr, $self->Start, $self->End );
-    $self->log('warn', $msg);
+    $self->log( 'warn', $msg );
   }
 }
 

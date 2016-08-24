@@ -56,7 +56,7 @@ sub Run {
     else {
       my $msg =
         sprintf( "Error: Failed to write isPcr Primer File: %s", $tempIsPcrPrimerFile );
-      $self->log('fatal', $msg);
+      $self->log( 'fatal', $msg );
     }
   }
   my $runLog = qx/$cmd/;
@@ -65,8 +65,8 @@ sub Run {
     return 1;
   }
   else {
-    $self->log('warn', "Error running isPcr");
-    $self->log('warn', $runLog);
+    $self->log( 'warn', "Error running isPcr" );
+    $self->log( 'warn', $runLog );
     return;
   }
 }
