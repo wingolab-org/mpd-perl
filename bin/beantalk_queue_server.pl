@@ -126,6 +126,7 @@ while(my $job = $beanstalk->reserve ) {
       $beanstalk->delete($job->id);
     }
 
+    say "finished";
   $pm->finish(0);
 }
 
