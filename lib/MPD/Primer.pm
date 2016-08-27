@@ -99,7 +99,7 @@ sub WriteOrderFile {
   my ( $self, $file, $optHref ) = $check->(@_);
 
   if ( $self->no_primers ) {
-    return $self->('warn', "No primers to write to order file: $file");
+    return $self->( 'warn', "No primers to write to order file: $file" );
   }
 
   if ( eval("require 'Excel::Writer::XLSX'") ) {
@@ -164,7 +164,7 @@ sub OrderAsHref {
   my ( $self, $optHref ) = $check->(@_);
 
   if ( $self->no_primers ) {
-    return $self->log('info', 'No primers to order');
+    return $self->log( 'info', 'No primers to order' );
   }
 
   # Determine number of pools for the primer set
@@ -210,7 +210,7 @@ sub OrderAsHref {
     $offset = 0;
   }
   if ( $offset < 0 ) {
-    return $self->log('fatal', "Printing Offset (PrnOffset) expected to be >=0.");
+    return $self->log( 'fatal', "Printing Offset (PrnOffset) expected to be >=0." );
   }
 
   # organize the data we need
@@ -232,7 +232,7 @@ sub OrderAsHref {
 
     # are we beyond the max number of plates
     if ( !exists $poolStartsAref->[ $pairCount + $offset ] ) {
-      last $self->log('warn', "Asked to plate across >48 plates");
+      last $self->log( 'warn', "Asked to plate across >48 plates" );
     }
 
     # did we reach the maximum number of plates specified
@@ -243,7 +243,7 @@ sub OrderAsHref {
         $plateMax + 1,
         $pairCount, $primerCount
       );
-      $self->log('warn', $msg);
+      $self->log( 'warn', $msg );
 
       return \%prnHash;
     }
@@ -341,7 +341,7 @@ sub PrimerList {
 
   # TODO: use reftype here
   if ( scalar @$attrsAref == 0 ) {
-    return $self->log('fatal', "Attributes should be a list");
+    return $self->log( 'fatal', "Attributes should be a list" );
   }
 
   my @array;
@@ -605,7 +605,7 @@ sub WriteCoveredFile {
   my ( $self, $fileName, $bedObj ) = $check->(@_);
 
   if ( $self->no_primers ) {
-   return $self->log('warn', "No primers to write to coverage file: $fileName");
+    return $self->log( 'warn', "No primers to write to coverage file: $fileName" );
   }
 
   my $fh         = path($fileName)->filehandle(">");
@@ -618,7 +618,7 @@ sub WriteUncoveredFile {
   my ( $self, $fileName, $bedObj ) = $check->(@_);
 
   if ( $self->no_primers ) {
-    return $self->log('warn', "No primers to write to uncovered file: $fileName");
+    return $self->log( 'warn', "No primers to write to uncovered file: $fileName" );
   }
 
   my $fh              = path($fileName)->filehandle(">");
@@ -637,7 +637,7 @@ sub WritePrimerFile {
   }
 
   if ( $self->no_primers ) {
-    return $self->log('warn', "No primers to write to primer file: $fileName");
+    return $self->log( 'warn', "No primers to write to primer file: $fileName" );
   }
 
   my $fh = path($fileName)->filehandle(">");
@@ -668,7 +668,7 @@ sub WriteIsPcrFile {
   }
 
   if ( $self->no_primers ) {
-    return $self->log('warn', "No primers to write to isPcr file: $fileName");
+    return $self->log( 'warn', "No primers to write to isPcr file: $fileName" );
   }
 
   my $fh = path($fileName)->filehandle(">");
@@ -689,7 +689,7 @@ sub Sumarize_as_aref {
   my @array;
 
   if ( $self->no_primers ) {
-    return $self->log('warn', "No primers to summarize");
+    return $self->log( 'warn', "No primers to summarize" );
   }
 
   # header
@@ -719,7 +719,7 @@ sub Summarize_as_str {
 # BUILDARGS takes either a hash reference or string, which is a primer file
 sub BUILDARGS {
   my $class = shift;
-  
+
   if ( scalar @_ == 1 ) {
     if ( !reftype( $_[0] ) ) {
       # assumption is that you passed a file be read and used to create
@@ -736,13 +736,15 @@ sub BUILDARGS {
       return $class->SUPER::BUILDARGS( $_[0] );
     }
     else {
-      return $class->log('fatal', "Error: Construct MPD::Primer object with either a hashref,"
-        . " arrayref of hashrefs, or primer file");
+      return $class->log( 'fatal',
+            "Error: Construct MPD::Primer object with either a hashref,"
+          . " arrayref of hashrefs, or primer file" );
     }
   }
   else {
-    return $class->log('fatal', 'Error: Construct MPD::Primer object with either'
-      . ' a hashref, arrayref of hashrefs, or primer file');
+    return $class->log( 'fatal',
+          'Error: Construct MPD::Primer object with either'
+        . ' a hashref, arrayref of hashrefs, or primer file' );
   }
 }
 
@@ -775,7 +777,7 @@ sub _ReadPrimerFile {
       # legacy files don't have a header but start with the Primer_number
       if ( $fields[0] =~ m/\A\d+/ ) {
         %header = map { $expHeader[$_] => $_ } ( 0 .. $#expHeader );
-        $self->log('info', dump( \%header ) );
+        $self->log( 'info', dump( \%header ) );
       }
       # newer format has a header so skip to the next line after grabbing the header
       elsif ( !@NotFoundFields ) {
@@ -785,7 +787,7 @@ sub _ReadPrimerFile {
       else {
         my $msg = "Cannot find fields: ";
         $msg .= "'" . join( "', '", @NotFoundFields ) . "'";
-        return $self->log('fatal', $msg);
+        return $self->log( 'fatal', $msg );
       }
     }
     my %data = map { $_ => $fields[ $header{$_} ] } ( keys %header );
@@ -794,7 +796,7 @@ sub _ReadPrimerFile {
       my $msg =
         sprintf( "Error: no value for expected header Primer_number at line: %d\n\n==> %s",
         ( $lineCount + 1 ), $line );
-      return $self->log('fatal', $msg);
+      return $self->log( 'fatal', $msg );
     }
 
     if ( $primerNumber == 0 ) {

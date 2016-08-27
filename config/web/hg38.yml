@@ -31,6 +31,11 @@ User:
         type: int
         desc: "Maximum number of primers in a pool (max value: 10)."
         max: 10
+    -
+        name: PoolMin
+        val: 5
+        type: int
+        desc: "Minimum number of primers in a pool (min value: 3)."
 
   Advanced:
     - 
@@ -92,12 +97,7 @@ User:
         val: 10
         type: int
         desc: "If a primer isn't found for the AmpSize, iterate by this length."
-    -
-        name: PoolMin
-        val: 5
-        type: int
-        desc: "Minimum number of primers in a pool (min value: 3)."
-        
+
     -   min: 3
         name: FwdAdapter
         val: ACACTGACGACATGGTTCTACA

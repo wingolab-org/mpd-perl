@@ -38,7 +38,7 @@ sub DegenerateMatches {
   my ( @degenPairs, %hash );
 
   if ( $self->no_matches ) {
-    return $self->log('warn', "No matches to process for DegenerateMatches()");
+    return $self->log( 'warn', "No matches to process for DegenerateMatches()" );
   }
 
   for my $m ( $self->all_matches ) {
@@ -54,7 +54,7 @@ sub DegenerateMatches {
         else {
           my $msg = sprintf( "Warning: unrecognized chromosome '%s' for match: %s",
             $m->tName, $m->qName );
-          $self->log('warn', $msg);
+          $self->log( 'warn', $msg );
         }
       }
     }
@@ -95,13 +95,15 @@ sub BUILDARGS {
       return $class->SUPER::BUILDARGS( $_[0] );
     }
     else {
-      return $class->log('fatal', 'Error: Construct MPD::Primer object with either'
-      . ' a hashref, arrayref of hashrefs, or primer file');
+      return $class->log( 'fatal',
+            'Error: Construct MPD::Primer object with either'
+          . ' a hashref, arrayref of hashrefs, or primer file' );
     }
   }
   else {
-    return $class->log('fatal', 'Error: Construct MPD::Primer object with either'
-     .' a hashref, arrayref of hashrefs, or primer file');
+    return $class->log( 'fatal',
+          'Error: Construct MPD::Primer object with either'
+        . ' a hashref, arrayref of hashrefs, or primer file' );
   }
 }
 

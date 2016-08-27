@@ -172,12 +172,12 @@ sub _processBedFile {
         push @array, $b;
       }
       catch {
-        $self->log('info', "ignoring line: $line");
+        $self->log( 'info', "ignoring line: $line" );
       };
 
     }
     else {
-      $self->log('fatal', sprintf( "Bedfile missing chr, start, or stop: %s", $line ) );
+      $self->log( 'fatal', sprintf( "Bedfile missing chr, start, or stop: %s", $line ) );
     }
   }
   return $self->_processBedObjs( \@array );
@@ -279,11 +279,13 @@ sub BUILDARGS {
       return $class->SUPER::BUILDARGS( $_[0] );
     }
     else {
-      return $class->log('fatal', "Construct MPD::Bed object with either a hashref or bed file");
+      return $class->log( 'fatal',
+        "Construct MPD::Bed object with either a hashref or bed file" );
     }
   }
   else {
-    return $class->log('fatal', "Construct MPD::Bed object with either a hashref or bed file");
+    return $class->log( 'fatal',
+      "Construct MPD::Bed object with either a hashref or bed file" );
   }
 }
 

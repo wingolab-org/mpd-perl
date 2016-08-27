@@ -64,6 +64,37 @@ has PoolMin       => ( is => 'ro', isa => 'Int', default => 1,   required => 1 )
 has TmStep        => ( is => 'rw', isa => 'Num', default => 0.5, required => 1 );
 has PadSize       => ( is => 'ro', isa => 'Int', default => 60,  required => 1 );
 
+# max and min allowed parameter values
+my %ParmsMax = (
+  PrimerSizeMin => 30,
+  PrimerSizeMax => 30,
+  AmpSizeMin    => 1000,
+  AmpSizeMax    => 1000,
+  GcMin         => 0.8,
+  GcMax         => 0.8,
+  TmMin         => 75,
+  TmMax         => 75,
+  PoolMax       => 10,
+  PoolMin       => 10,
+  TmStep        => 4,
+  PadSize       => 200,
+);
+
+my %ParmsMin = (
+  PrimerSizeMin => 17,
+  PrimerSizeMax => 17,
+  AmpSizeMin    => 100,
+  AmpSizeMax    => 100,
+  GcMin         => 0.3,
+  GcMax         => 0.3,
+  TmMin         => 50,
+  TmMax         => 50,
+  PoolMax       => 1,
+  PoolMin       => 1,
+  TmStep        => 0.5,
+  PadSize       => 60,
+);
+
 # regions that are uncovered _after_ initial trial
 has UnCovered => ( is => 'rw', isa => 'Maybe[MPD::Bed]', default => sub { } );
 
@@ -124,29 +155,36 @@ has KeepPrimers => (
   default => sub { [] },
 );
 
-has verbose => (is => 'ro', default => 1);
+has verbose => ( is => 'ro', default => 1 );
 
-has publisher => (is => 'ro');
+has publisher => ( is => 'ro' );
+
 sub BUILD {
   my $self = shift;
 
-  if($self->publisher) {
-    $self->setPublisher($self->publisher);
+  if ( $self->publisher ) {
+    $self->setPublisher( $self->publisher );
   }
 
-  $self->setLogPath(path($self->OutDir)->child($self->OutExt . ".log")->stringify);
+  $self->setLogPath(
+    path( $self->OutDir )->child( $self->OutExt . ".log" )->stringify );
 
-  if($self->Debug) {
+  if ( $self->Debug ) {
     $self->setLogLevel('DEBUG');
   }
 
-  if($self->verbose) {
+  if ( $self->verbose ) {
     $self->setVerbosity(1);
   }
 }
+
 sub RunAll {
   my $self = shift;
-  $self->FindBestCoverage(1);
+  my $ok   = $self->FindBestCoverage( $self->Act );
+  if ( !$ok ) {
+    $self->log( 'warn',
+      sprintf( "Return from primer design before %d iteration", $self->IterMax ) );
+  }
   return $self->PrintPrimerData( $self->OutExt );
 }
 
@@ -154,59 +192,146 @@ sub PrintPrimerData {
   state $check = compile( Object, Str );
   my ( $self, $OutExt ) = $check->(@_);
 
-  if ( !$self->no_primer ) {
-
-    if($self->Debug) {
-      say "Writing final primer design.";
-    }
-
-    my $p       = MPD::Primer->new( $self->KeepPrimers );
-    my $dupAref = $p->DuplicatePrimers();
-    $p = $p->RemovePrimers($dupAref);
-
-    # order file goes first so that we upate the primers with the
-    # names of the regions in the bedfile, if there are any.
-    my $forOrderPt = $self->OutDir->child( sprintf( "%s.forOrder.xlsx", $OutExt ) );
-    $p->WriteOrderFile( $forOrderPt->stringify, $self->_prnOpt );
-
-    my $coveredPt = $self->OutDir->child( sprintf( "%s.covered.bed", $OutExt ) );
-    $p->WriteCoveredFile( $coveredPt->stringify, $self->Bed );
-
-    my $uncoveredPt = $self->OutDir->child( sprintf( "%s.uncovered.bed", $OutExt ) );
-    $p->WriteUncoveredFile( $uncoveredPt->stringify, $self->Bed );
-
-    my $primerPt = $self->OutDir->child( sprintf( "%s.primer.txt", $OutExt ) );
-    $p->WritePrimerFile( $primerPt->stringify );
-
-    my $isPcrPt = $self->OutDir->child( sprintf( "%s.isPcr.txt", $OutExt ) );
-    $p->WriteIsPcrFile( $isPcrPt->stringify );
+  if ( $self->no_primer ) {
+    $self->log( 'warn', 'No Primers written. This might be a dry run.' );
+    return;
   }
-  else {
-    $self->log('warn', 'No Primers written. This might be a dry run.');
+
+  if ( $self->Debug ) {
+    say "Writing final primer design.";
   }
+
+  my $p       = MPD::Primer->new( $self->KeepPrimers );
+  my $dupAref = $p->DuplicatePrimers();
+  $p = $p->RemovePrimers($dupAref);
+
+  # order file goes first so that we upate the primers with the
+  # names of the regions in the bedfile, if there are any.
+  my $forOrderPt = $self->OutDir->child( sprintf( "%s.forOrder.xlsx", $OutExt ) );
+  $p->WriteOrderFile( $forOrderPt->stringify, $self->_prnOpt );
+
+  my $coveredPt = $self->OutDir->child( sprintf( "%s.covered.bed", $OutExt ) );
+  $p->WriteCoveredFile( $coveredPt->stringify, $self->Bed );
+
+  my $uncoveredPt = $self->OutDir->child( sprintf( "%s.uncovered.bed", $OutExt ) );
+  $p->WriteUncoveredFile( $uncoveredPt->stringify, $self->Bed );
+
+  my $primerPt = $self->OutDir->child( sprintf( "%s.primer.txt", $OutExt ) );
+  $p->WritePrimerFile( $primerPt->stringify );
+
+  my $isPcrPt = $self->OutDir->child( sprintf( "%s.isPcr.txt", $OutExt ) );
+  $p->WriteIsPcrFile( $isPcrPt->stringify );
 }
 
-# FindBestCoverage - for testing purposes
+# FindBestCoverage performs the primer design for a number of specified
+# iterations. Before each primer design attempt the objects PCR parameters
+# are vaildated. If the function exits before IterMax then it returns undef
+# otherwise it returns 1.
 sub FindBestCoverage {
   my ( $self, $act ) = @_;
 
   my $iterTotal = $self->IterMax + 1;
 
   while ( $self->_Iter < $self->IterMax ) {
+    my ( $ok, $msg ) = $self->_validatePcrParams;
+    if ( !$ok ) {
+      $self->log( 'warn',
+        sprintf( "Stopping at iteration %d because %s", $self->_Iter, $msg ) );
+      return;
+    }
+
     $self->_runPrimerDesign( $self->PoolMin );
+
     $self->_incrAmpSize;
+    ( $ok, $msg ) = $self->_validatePcrParams;
+    if ( !$ok ) {
+      $self->log( 'warn',
+        sprintf( "Stopping at iteration %d because %s", $self->_Iter, $msg ) );
+      return;
+    }
+
     $self->_runPrimerDesign( $self->PoolMin );
+
     $self->_incrTm;
+    ( $ok, $msg ) = $self->_validatePcrParams;
+    if ( !$ok ) {
+      $self->log( 'warn',
+        sprintf( "Stopping at iteration %d because %s", $self->_Iter, $msg ) );
+      return;
+    }
+
     $self->_runPrimerDesign( $self->PoolMin );
+
     $self->_incrTmStep;
+    ( $ok, $msg ) = $self->_validatePcrParams;
+    if ( !$ok ) {
+      $self->log( 'warn',
+        sprintf( "Stopping at iteration %d because %s", $self->_Iter, $msg ) );
+      return;
+    }
+
     $self->_runPrimerDesign( $self->PoolMin );
     $self->_incrIter;
 
     $self->publishProgress( sprintf "%0.2f", ( $self->_Iter / $iterTotal ) * 100 );
   }
+  return 1;
+}
 
-  $self->_runPrimerDesign(1);
-  return $self->PrintPrimerData( $self->OutExt );
+# _validatePcrParams() validates the object's PCR parameters and returns an
+# array with the first value as the success code and the second as the string
+# of error messages, if any.
+sub _validatePcrParams {
+  my $self = shift;
+
+  my @fail;
+
+  for my $attr ( sort keys %ParmsMin ) {
+    if ( $self->$attr < $ParmsMin{$attr} ) {
+      push @fail,
+        sprintf( "%s (%d) < minimum (%d)", $attr, $self->$attr, $ParmsMin{$attr} );
+    }
+    elsif ( $self->$attr > $ParmsMax{$attr} ) {
+      push @fail,
+        sprintf( "%s (%d) > maximum (%d)", $attr, $self->$attr, $ParmsMax{$attr} );
+    }
+    elsif ( $attr eq "PrimerSizeMin" ) {
+      if ( $self->$attr > $self->PrimerSizeMax ) {
+        push @fail,
+          sprintf( "%s (%d) < PrimerSizeMax (%d)",
+          $attr, $self->$attr, $self->PrimerSizeMax );
+      }
+    }
+    elsif ( $attr eq "GcMin" ) {
+      if ( $self->$attr > $self->GcMax ) {
+        push @fail, sprintf( "%s (%d) > GcMax (%d)", $attr, $self->$attr, $self->GcMax );
+      }
+    }
+    elsif ( $attr eq "TmMin" ) {
+      if ( $self->$attr > $self->TmMax ) {
+        push @fail, sprintf( "%s (%d) > TmMax (%d)", $attr, $self->$attr, $self->TmMax );
+      }
+    }
+    elsif ( $attr eq "PoolMax" ) {
+      if ( $self->$attr < $self->PoolMin ) {
+        push @fail, sprintf( "%s (%d) < PoolMin (%d)", $attr, $self->$attr, $self->PoolMin );
+      }
+    }
+    elsif ( $attr eq "PadSize" ) {
+      if ( $self->$attr < $self->PrimerSizeMin ) {
+        push @fail,
+          sprintf( "%s (%d) < PrimerSizeMin (%d)",
+          $attr, $self->$attr, $self->PrimerSizeMin );
+      }
+    }
+  }
+  if ( scalar @fail > 0 ) {
+    # output message
+    return ( undef, join "\n", @fail );
+  }
+  else {
+    return ( 1, "" );
+  }
 }
 
 sub _build_Bed {
@@ -230,11 +355,11 @@ sub _pcrParams {
   }
 
   if ( $self->UnCovered() ) {
-    $self->log('info', "PCR Params: using uncovered bed data");
+    $self->log( 'info', "PCR Params: using uncovered bed data" );
     $attrs{Bed} = $self->UnCovered();
   }
   else {
-    $self->log('info', "PCR Params: using original bed data");
+    $self->log( 'info', "PCR Params: using original bed data" );
     $attrs{Bed} = $self->Bed();
   }
   say "======================" if $self->Debug;
@@ -277,7 +402,7 @@ sub _incrTm {
 sub _incrTmStep {
   my $self   = shift;
   my $tmIncr = $self->TmStep;
-  $tmIncr += $self->TmStep;
+  $tmIncr += $self->IncrTmStep;
   $self->TmStep($tmIncr);
 }
 
@@ -347,7 +472,7 @@ sub _keepPoolPrimers {
   my $self = shift;
 
   if ( $self->no_pool ) {
-    return $self->log('info', "no pooled primers");
+    return $self->log( 'info', "no pooled primers" );
   }
 
   for my $aref ( $self->all_pools ) {
@@ -396,27 +521,28 @@ sub _saveJsonData {
 sub _printPrimerSummary {
   my ( $self, $primer, $labelStr ) = @_;
 
-  $self->log('info', $labelStr);
+  $self->log( 'info', $labelStr );
 
   if ( !defined $primer ) {
-    $self->log('info', ">> No Primers <<");
+    $self->log( 'info', ">> No Primers <<" );
   }
   elsif ( reftype $primer eq 'ARRAY' ) {
     my $count = 1;
     for my $primerObj (@$primer) {
-      $self->log('info', "--- Primer Group $count ---");
-      $self->log('info', $primerObj->Summarize_as_str());
+      $self->log( 'info', "--- Primer Group $count ---" );
+      $self->log( 'info', $primerObj->Summarize_as_str() );
       $count++;
     }
   }
   elsif ( blessed $primer eq 'MPD::Primer' ) {
-    $self->log('info', $primer->Summarize_as_str() );
+    $self->log( 'info', $primer->Summarize_as_str() );
   }
   else {
-    $self->log('fatal', "unrecognized thing to print");
+    $self->log( 'fatal', "unrecognized thing to print" );
   }
 }
 
 __PACKAGE__->meta->make_immutable;
 
 1;
+
