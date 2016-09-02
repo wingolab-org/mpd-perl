@@ -25,6 +25,8 @@ use Try::Tiny;
 use Hash::Merge::Simple qw/merge/;
 use YAML::XS qw/LoadFile/;
 
+use lib './lib';
+
 use MPD;
 
 # use AnyEvent;
@@ -36,13 +38,13 @@ use MPD;
 # max of 1 job at a time for now
 
 my $DEBUG = 0;
-my $conf  = LoadFile("queue.yaml");
+my $conf  = LoadFile("./config/queue.yaml");
 
 # Beanstalk servers will be sharded
 my $beanstalkHost = $conf->{beanstalk_host_1};
 my $beanstalkPort = $conf->{beanstalk_port_1};
 
-my $configPathBaseDir = ".";
+my $configPathBaseDir = "./config/web/";
 
 my $verbose = 1;
 
@@ -66,11 +68,9 @@ my $beanstalkEvents = Beanstalk::Client->new(
   }
 );
 
-my $pm = Parallel::ForkManager->new(8);
+# my $pm = Parallel::ForkManager->new(8);
 
 while ( my $job = $beanstalk->reserve ) {
-  $pm->start and next;
-  say "starting job " . $job->id;
 
   # Parallel ForkManager used only to throttle number of jobs run in parallel
   # cannot use run_on_finish with blocking reserves, use try catch instead
@@ -89,7 +89,7 @@ while ( my $job = $beanstalk->reserve ) {
     }
   );
 
-  my ( $err, $statistics ) = handleJob( $jobDataHref, $job->id );
+  my ( $err, $result ) = handleJob( $jobDataHref, $job->id );
 
   if ($err) {
     say "job " . $job->id . " failed with $err";
@@ -121,7 +121,7 @@ while ( my $job = $beanstalk->reserve ) {
           {
             event   => 'completed',
             queueId => $job->id,
-            result  => $statistics,
+            results  => $result,
           }
         )
       }
@@ -131,10 +131,7 @@ while ( my $job = $beanstalk->reserve ) {
   }
 
   say "finished";
-  $pm->finish(0);
 }
-
-$pm->wait_all_children();
 
 sub handleJob {
   my $submittedJob = shift;
@@ -220,7 +217,7 @@ sub coerceInputs {
       event   => 'progress',
       queueId => $queueId,
       data    => undef,
-    }
+    },
   };
 
   $mergedConfig->{configfile}  = $configFilePath;
@@ -228,6 +225,9 @@ sub coerceInputs {
   $mergedConfig->{OutExt}      = $jobDetailsHref->{name};
   $mergedConfig->{OutDir}      = $jobDetailsHref->{dirs}{out};
   $mergedConfig->{ProjectName} = $jobDetailsHref->{name};
+
+  # need to compress so web can get a single file to download
+  $mergedConfig->{compress} = 1;
 
   return $mergedConfig;
 }
@@ -255,7 +255,8 @@ sub coerceInputs {
 sub getConfigFilePath {
   my $assembly = shift;
 
-  my @maybePath = glob( $configPathBaseDir . $assembly . ".y*ml" );
+  my @maybePath = glob( path($configPathBaseDir)->child($assembly . ".y*ml")->stringify );
+
   if ( scalar @maybePath ) {
     if ( scalar @maybePath > 1 ) {
       #should log

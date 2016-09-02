@@ -9,14 +9,14 @@ use MooseX::Types::Path::Tiny qw/ AbsPath AbsFile File /;
 use namespace::autoclean;
 
 use Excel::Writer::XLSX;
-use JSON;
+use Cpanel::JSON::XS;
 use Path::Tiny;
 use Scalar::Util qw/ blessed reftype /;
 use Type::Params qw/ compile /;
 use Types::Standard qw/ :types /;
 use Time::localtime;
 use Try::Tiny;
-
+use DDP;
 use Data::Dump qw/ dump /; # for debugging
 
 use MPD::isPcr;
@@ -27,7 +27,7 @@ use MPD::PrimerDesign;
 our $VERSION = '0.001';
 my $time_now = ctime();
 
-with 'MPD::Role::ConfigFromFile', 'MPD::Role::Message';
+with 'MPD::Role::ConfigFromFile', 'MPD::Role::Message', 'MPD::Role::IO';
 
 # attr for necessary data files
 has BedFile => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
@@ -159,6 +159,8 @@ has verbose => ( is => 'ro', default => 1 );
 
 has publisher => ( is => 'ro' );
 
+has compress => (is => 'ro', default => 0);
+
 sub BUILD {
   my $self = shift;
 
@@ -185,12 +187,24 @@ sub RunAll {
     $self->log( 'warn',
       sprintf( "Return from primer design before %d iteration", $self->IterMax ) );
   }
-  return $self->PrintPrimerData( $self->OutExt );
+
+  # Returns json string
+  my $json = $self->PrintPrimerData( $self->OutExt, 1 );
+
+  my $compressPath;
+  if($self->compress) {
+    $compressPath = $self->compressPath( $self->OutDir->child($self->OutExt) );
+  }
+
+  say "compress path is " . $self->OutDir->child($self->OutExt)->stringify;
+  p $compressPath;
+
+  return ($compressPath, $json);
 }
 
 sub PrintPrimerData {
-  state $check = compile( Object, Str );
-  my ( $self, $OutExt ) = $check->(@_);
+  state $check = compile( Object, Str, Bool );
+  my ( $self, $OutExt, $printJson ) = $check->(@_);
 
   if ( $self->no_primer ) {
     $self->log( 'warn', 'No Primers written. This might be a dry run.' );
@@ -221,7 +235,22 @@ sub PrintPrimerData {
 
   my $isPcrPt = $self->OutDir->child( sprintf( "%s.isPcr.txt", $OutExt ) );
   $p->WriteIsPcrFile( $isPcrPt->stringify );
+
+#  my $compressPath;
+#  if($self->compress) {
+#    $compressPath = $self->compressPath( $self->OutDir->child($OutExt) );
+#  }
+
+#  say "compress path is " . $self->OutDir->child($OutExt)->stringify;
+#  p $compressPath;
+   
+   if($printJson) {
+     return $p->MakeCoveredJsonString( $self->Bed );
+   }
+
+   return;
 }
+
 
 # FindBestCoverage performs the primer design for a number of specified
 # iterations. Before each primer design attempt the objects PCR parameters
@@ -273,7 +302,7 @@ sub FindBestCoverage {
     $self->_runPrimerDesign( $self->PoolMin );
     $self->_incrIter;
 
-    $self->publishProgress( sprintf "%0.2f", ( $self->_Iter / $iterTotal ) * 100 );
+    $self->publishProgress( $self->_Iter );
   }
   return 1;
 }
@@ -499,7 +528,7 @@ sub _updateUncovered {
   my $uncoveredBedObj  = $primerObj->BedUncovered( $primerDesignHref->{Bed} );
   $self->_printPrimerSummary( $primerObj, '_uncovered()' ) if $self->Debug;
   $self->UnCovered($uncoveredBedObj);
-  $self->PrintPrimerData( $self->_Iter );
+  $self->PrintPrimerData( $self->_Iter, 0 );
 }
 
 # for debugging

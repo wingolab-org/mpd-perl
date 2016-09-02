@@ -78,10 +78,10 @@ User:
         min: 0
         desc: "Minimum percent primer GC content."
     -
-        name: Iter
+        name: IterMax
         val: 2
         type: int
-        desc: "Number of iterations used to find best primers."
+        desc: "Maximum number of iterations used to find the best primers."
     -
         name: IncrTm
         val: 1
