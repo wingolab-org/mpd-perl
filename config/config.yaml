@@ -3,7 +3,7 @@ Core:
     val: /home/ec2-user/bin/x86_64/isPcr
     type: str
   TwoBitFile:
-    val: /mnt/annnotator/2bit/hg38.2bit
+    val: /mnt/mpd-dat/2bit/hg38.2bit
     type: str
   MpdBinary:
     val: /home/ec2-user/bin/mpd
