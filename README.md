@@ -1,6 +1,10 @@
 # MPD - Multiplex Primer Design
 
-This package assists in the automation of multiplex primer design. To get the most out of this package you will need the companion C code, which you can find [here (mpd-c)](http://github.com/wingolab-org/mpd-c).
+This package assists in the automation of multiplex primer design. This package was designed for the companion MPD program, which you can find [here (mpd-c)](http://github.com/wingolab-org/mpd-c).
+
+## Citation
+
+Please cite our [paper](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-016-1453-3) if you use MPD in your work. Thanks.
 
 ## Installation
 
