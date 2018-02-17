@@ -13,7 +13,6 @@ use Types::Standard qw/ :types /;
 use Scalar::Util qw/ reftype /;
 use Path::Tiny;
 use Try::Tiny;
-
 use Data::Dump qw/ dump /; # for debugging
 
 use MPD::Bed::Raw;
@@ -139,6 +138,12 @@ sub _processBedFile {
   my @array;
 
   my @lines = path($bedFile)->lines( { chomp => 1 } );
+
+  if(@lines > 400000) {
+    $self->log('fatal', "Sorry! Currently we support a maximum of 400,000 primer pairs/targets");
+  }
+
+  my $id = 0;
   for my $line (@lines) {
     my @fields = split /\t/, $line;
     my ( $chr, $start, $stop, $name ) = @fields;
@@ -159,6 +164,12 @@ sub _processBedFile {
       elsif ( $chr eq 'Y' ) {
         $chr = 25;
       }
+
+      if(length($name) > 18) {
+        $name = substr($name, 0, 17) . "_$id";
+      }
+
+      $id++;
 
       try {
         my $b = MPD::Bed::Raw->new(

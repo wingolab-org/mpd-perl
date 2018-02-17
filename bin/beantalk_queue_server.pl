@@ -141,6 +141,9 @@ sub handleJob {
 
   my $inputHref = coerceInputs( $submittedJob, $queueId );
 
+  say "inputHref is";
+  p $inputHref;
+
   try {
     my $dir = path( $inputHref->{OutDir} );
 
