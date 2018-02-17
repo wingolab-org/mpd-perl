@@ -173,7 +173,7 @@ sub log {
   }
   elsif ( $_[1] eq 'debug' && $debug ) {
     $MPD::Role::Message::LOG->DEBUG("[DEBUG] $_[2]");
-    $_[0]->publishMessage("[DEBUG] $_[2]");
+    # $_[0]->publishMessage("[DEBUG] $_[2]");
 
     if ($verbosity) {
       say STDOUT "[DEBUG] $_[2]";
@@ -192,7 +192,6 @@ sub log {
   }
   elsif ( $_[1] eq 'fatal' ) {
     $MPD::Role::Message::LOG->ERR("[FATAL] $_[2]");
-    #$_[0]->publishMessage($_[1], $_[2]);
     $_[0]->publishMessage("[FATAL] $_[2]");
 
     confess "[FATAL] $_[2]";

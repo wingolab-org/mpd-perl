@@ -26,6 +26,7 @@ use MPD::PrimerDesign;
 
 our $VERSION = '0.001';
 my $time_now = ctime();
+use Scalar::Util qw/looks_like_number/;
 
 with 'MPD::Role::ConfigFromFile', 'MPD::Role::Message', 'MPD::Role::IO';
 
@@ -45,7 +46,7 @@ has Act      => ( is => 'ro', isa => 'Bool', default => 0 );
 
 # attr for parameter optimization
 has CoverageThreshold => ( is => 'ro', isa => 'Num', default => 0.5, required => 1 );
-has IncrAmpSize       => ( is => 'ro', isa => 'Int', default => 10,  required => 1 );
+has IncrAmpSize       => ( is => 'ro', isa => 'Int', default => 10, required => 1 );
 has IncrTm            => ( is => 'ro', isa => 'Num', default => 0.5, required => 1 );
 has IncrTmStep        => ( is => 'ro', isa => 'Num', default => 0.5, required => 1 );
 has IterMax           => ( is => 'ro', isa => 'Int', default => 10,  required => 1 );
@@ -160,6 +161,18 @@ has verbose => ( is => 'ro', default => 1 );
 has publisher => ( is => 'ro' );
 
 has compress => (is => 'ro', default => 0);
+
+sub BUILDARGS {
+  my ($class, $data) = @_;
+
+  for my $d (keys %$data) {
+    if(!looks_like_number($data->{$d}) && $data->{$d} eq '') {
+      delete $data->{$d};
+    }
+  }
+
+  return $data
+}
 
 sub BUILD {
   my $self = shift;

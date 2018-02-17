@@ -172,7 +172,7 @@ sub _processBedFile {
         push @array, $b;
       }
       catch {
-        $self->log( 'info', "ignoring line: $line" );
+        # $self->log( 'info', "ignoring line: $line" );
       };
 
     }
