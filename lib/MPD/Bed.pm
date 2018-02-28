@@ -146,6 +146,11 @@ sub _processBedFile {
   my $id = 0;
   for my $line (@lines) {
     my @fields = split /\t/, $line;
+
+    if(@fields == 1) {
+      $self->log( 'fatal', "Bedfile must be tab delimited");
+    }
+
     my ( $chr, $start, $stop, $name ) = @fields;
 
     if ( defined $chr && defined $start && defined $stop ) {
