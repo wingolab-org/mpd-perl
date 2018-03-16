@@ -144,10 +144,17 @@ sub _processBedFile {
   }
 
   my $id = 0;
+  my $row = 0;
   for my $line (@lines) {
     my @fields = split /\t/, $line;
 
     if(@fields == 1) {
+      # allow header to be present
+      # many, many files that fail, fail for this reason
+      if($row == 0) {
+        $row++;
+        next;
+      }
       $self->log( 'fatal', "Bedfile must be tab delimited");
     }
 
