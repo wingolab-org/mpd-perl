@@ -1,0 +1,12 @@
+requires 'Beanstalk::Client';
+requires 'Parallel::ForkManager';
+requires 'Cpanel::JSON::XS';
+requires 'DDP';
+requires 'Getopt::Long';
+requires 'File::Basename';
+requires 'Log::Any::Adapter';
+requires 'Log::Fast';
+requires 'Path::Tiny';
+requires 'Try::Tiny';
+requires 'Hash::Merge::Simple';
+requires 'YAML::XS';

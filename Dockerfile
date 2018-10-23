@@ -50,7 +50,7 @@ ADD ./ /root/mpd-perl/
 RUN curl -L https://cpanmin.us | perl - App::cpanminus \
     && mkdir -p /root/perl5/lib/perl \
     && cpanm --local-lib=/root/perl5 local::lib && eval $(perl -I /root/perl5/lib/perl5 -Mlocal::lib) \
-    && cd /root/mpd-perl && cpanm MPD.tar.gz && cd /root/ \
+    && cd /root/mpd-perl && cpanm MPD.tar.gz && cpanm --installdeps . \
     && git clone https://github.com/wingolab-org/mpd-c /root/mpd-c \
     && cd /root/mpd-c && make
 

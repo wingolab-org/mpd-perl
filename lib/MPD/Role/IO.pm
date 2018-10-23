@@ -92,6 +92,6 @@ sub makeRandomTempDir {
   return $newDir;
 }
 
-no Mouse::Role;
+no Moose::Role;
 
 1;
