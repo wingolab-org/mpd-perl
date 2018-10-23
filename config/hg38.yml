@@ -1,0 +1,81 @@
+Core:
+  isPcrBinary:
+    val: ~/bin/x86_64/isPcr
+    type: str
+  TwoBitFile:
+    val: ~/2bit/hg38.2bit
+    type: str
+  MpdBinary:
+    val: mpd
+    type: str
+  MpdIdx:
+    val: ~/mpd-dat/hg38.d14.sdx
+    type: str
+  dbSnpIdx:
+    val: ~/mpd-dat/ds_flat.sdx
+    type: str
+
+User:
+  Basic:
+    CoverageThreshold:
+      val: 0.8
+      type: int
+    PrimerSizeMin:
+      val: 17
+      type: int
+    PrimerSizeMax:
+      val: 27
+      type: int
+    PadSize:
+      val: 60
+      type: int
+    PoolMax:
+      val: 10
+      type: int
+    PoolMin:
+      val: 5
+      type: int
+    AmpSizeMax:
+      val: 260
+      type: int
+    AmpSizeMin:
+      val: 230
+      type: int
+    TmMax:
+      val: 62
+      type: float
+    TmMin:
+      val: 57
+      type: float
+    GcMax:
+      val: 0.7
+      type: float
+    GcMin:
+      val: 0.3
+      type: float
+    Iter:
+      val: 2
+      type: int
+    IncrTm:
+      val: 1
+      type: int
+    IncrTmStep:
+      val: 1
+      type: int
+    IncrAmpSize:
+      val: 10
+      type: int
+
+  Advanced:
+    FwdAdapter:
+      val: ACACTGACGACATGGTTCTACA
+      type: str
+    RevAdapter:
+      val: TACGGTAGCAGAGACTTGGTCT
+      type: str
+    Offset:
+      val: 0
+      type: bool
+    Randomize:
+      val: 1
+      type: bool
