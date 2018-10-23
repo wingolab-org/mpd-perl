@@ -6,7 +6,7 @@ Core:
     val: ~/2bit/hg38.2bit
     type: str
   MpdBinary:
-    val: mpd
+    val: ~/mpd-c/bin/mpd
     type: str
   MpdIdx:
     val: ~/mpd-dat/hg38.d14.sdx
