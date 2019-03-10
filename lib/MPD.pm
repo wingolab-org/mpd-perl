@@ -33,8 +33,8 @@ with 'MPD::Role::ConfigFromFile';
 # attr for necessary data files
 has BedFile => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
 has Bed => ( is => 'ro', isa => 'MPD::Bed', builder => '_build_Bed', lazy => 1 );
-has isPcrBinary => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
-has TwoBitFile  => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
+has isPcrBinary => ( is => 'ro', isa => AbsFile, coerce => 1, required => 0, );
+has TwoBitFile  => ( is => 'ro', isa => AbsFile, coerce => 1, required => 0, );
 has MpdBinary   => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
 has MpdIdx      => ( is => 'ro', isa => File,    coerce => 1, required => 1, );
 has dbSnpIdx    => ( is => 'ro', isa => File,    coerce => 1, required => 1, );
