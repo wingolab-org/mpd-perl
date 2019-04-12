@@ -11,7 +11,7 @@ use warnings;
 use strict;
 use Getopt::Long;
 use Path::Tiny;
-
+use YAML::XS qw/LoadFile/;
 use lib '../lib';
 
 use MPD;
@@ -42,9 +42,25 @@ $dir = path($dir);
 
 if ( !$dir->is_dir ) { $dir->mkpath(); }
 
-my $m = MPD->new_with_config(
-  {
-    configfile  => $config_file,
+my $file = LoadFile($config_file);
+
+if($file->{Core} || $file->{User}) {
+    my $coreHref = $file->{Core} || {};
+    my $userBasic = $file->{User} && $file->{User}{Basic} || {};
+    my $userAdvanced = $file->{User} && $file->{User}{Advanced} || {};
+
+    %$file = (%$coreHref, %$userBasic, %$userAdvanced);
+
+    for my $key (keys %$file) {
+      if(ref $file->{$key}) {
+        if(exists $file->{$key}{val}) {
+          $file->{$key} = $file->{$key}{val};
+        }
+      }
+    }
+}
+
+my $default = {
     BedFile     => $bed_file,
     OutExt      => $out_ext,
     OutDir      => $dir,
@@ -60,6 +76,10 @@ my $m = MPD->new_with_config(
     RevAdapter  => 'TACGGTAGCAGAGACTTGGTCT',
     Offset      => 0,
     Randomize   => 1,
-  }
-);
+};
+
+my %config = (%$default, %$file);
+
+my $m = MPD->new(\%config);
+
 $m->RunAll();

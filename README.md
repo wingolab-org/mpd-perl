@@ -2,7 +2,29 @@
 
 This package assists in the automation of multiplex primer design. To get the most out of this package you will need the companion C code, which you can find [here (mpd-c)](http://github.com/wingolab-org/mpd-c).
 
-## Installation
+## Install in Docker
+
+Run mpd-perl inside of a Docker instance. Configured for hg38.
+
+```sh
+git clone https://github.com/wingolab-org/mpd-perl && cd $_
+docker build -t mpd ./
+
+# Run
+docker run <docker_args> mpd design.pl <mpd_args>
+```
+
+Example running MPD from within Docker:
+
+```sh
+# Assuming you have a /mnt/data and wish to mount it as /data inside of the docker container
+# that you have ~/data/markers.txt.bed with your targets, and that you wish to write to ~/data/outdir/outfile.txt
+# config/hg38.yml comes installed with this docker image, inside of the image
+# if you wish, you can pass in your own config
+docker run -v ~/data:/data mpd design.pl -b /data/markers.txt.bed -c config/hg38.yml -d ~/data/outdir -o outfile.txt
+```
+
+## Manual Installation
 
 - Compiling the c binaries. Follow the instructions here: [mpd-c](http://github.com/wingolab-org/mpd-c).
 - Clone the perl MPD package (e.g., `git clone https://github.com/wingolab-org/mpd-perl.git`).
@@ -14,6 +36,7 @@ This package assists in the automation of multiplex primer design. To get the mo
 - See examples scripts in the `ex` directory or look at the tests, specifically, `t/05-Mpd.t` to see how to build and use the MPD object.
 
 ## Optional features
+
 - The MPD package can be made to use the standalone binary for isPcr by Jim Kent. If you are not familiar with isPcr [here is a web version](https://genome.ucsc.edu/cgi-bin/hgPcr) which has details about obtaining the source code to build the stand alone binary.
 - If you use the isPcr you will need the 2bit genome of the organism.
 

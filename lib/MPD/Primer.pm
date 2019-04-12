@@ -8,7 +8,7 @@ use Moose 2;
 use namespace::autoclean;
 
 use Excel::Writer::XLSX;
-use JSON;
+use Cpanel::JSON::XS;
 use Path::Tiny;
 use Type::Params qw/ compile /;
 use Types::Standard qw/ :types /;
@@ -611,6 +611,19 @@ sub WriteCoveredFile {
   my $fh         = path($fileName)->filehandle(">");
   my $coveredObj = $self->BedCoverage($bedObj);
   say {$fh} $coveredObj->Entries_as_str();
+}
+
+sub MakeCoveredJsonString {
+  state $check = compile( Object, Object );
+  my ( $self, $bedObj ) = $check->(@_);
+
+  if ( $self->no_primers ) {
+    return $self->log( 'warn', "No primers to make covered JSON string from" );
+  }
+
+  my $coveredObj = $self->BedCoverage($bedObj);
+
+  return encode_json( $coveredObj->Entries_as_aref() );
 }
 
 sub WriteUncoveredFile {

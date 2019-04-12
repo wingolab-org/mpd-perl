@@ -1,7 +1,7 @@
 Core:
   Act: 1
   isPcrBinary: /home/ec2-user/bin/x86_64/isPcr
-  TwoBitFile: /mnt/annnotator/2bit/hg38.2bit
+  TwoBitFile: /mnt/mpd-dat/2bit/hg38.2bit
   MpdBinary: /home/ec2-user/bin/mpd
   MpdIdx: hg38.d14.sdx
   dbSnpIdx: ds_flat.sdx
@@ -31,6 +31,11 @@ User:
         type: int
         desc: "Maximum number of primers in a pool (max value: 10)."
         max: 10
+    -
+        name: PoolMin
+        val: 5
+        type: int
+        desc: "Minimum number of primers in a pool (min value: 3)."
 
   Advanced:
     - 
@@ -73,10 +78,10 @@ User:
         min: 0
         desc: "Minimum percent primer GC content."
     -
-        name: Iter
+        name: IterMax
         val: 2
         type: int
-        desc: "Number of iterations used to find best primers."
+        desc: "Maximum number of iterations used to find the best primers."
     -
         name: IncrTm
         val: 1
@@ -92,12 +97,7 @@ User:
         val: 10
         type: int
         desc: "If a primer isn't found for the AmpSize, iterate by this length."
-    -
-        name: PoolMin
-        val: 5
-        type: int
-        desc: "Minimum number of primers in a pool (min value: 3)."
-        
+
     -   min: 3
         name: FwdAdapter
         val: ACACTGACGACATGGTTCTACA

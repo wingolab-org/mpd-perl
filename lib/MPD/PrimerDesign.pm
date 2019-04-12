@@ -50,7 +50,7 @@ has TmMin         => ( is => 'ro', isa => 'Num', default => 57,  required => 1 )
 has TmMax         => ( is => 'ro', isa => 'Num', default => 62,  required => 1 );
 has PoolMax       => ( is => 'ro', isa => 'Int', default => 10,  required => 1 );
 has PadSize       => ( is => 'ro', isa => 'Int', default => 60,  required => 1 );
-has TmStep        => ( is => 'ro', isa => 'Num', default => 0.5, required => 1 );
+has TmStep        => ( is => 'ro', isa => 'Num', default => 1,   required => 1 );
 
 # Temporary Files
 #my $bedPt    = Path::Tiny->tempfile();
@@ -91,7 +91,8 @@ sub RunMpp {
   my $cmd = sprintf( "%s < %s > %s\n",
     $self->MpdBinary, $tmpCmdPt->stringify, $mpdOut->stringify );
   if ( system($cmd ) != 0 ) {
-    return $self->log( 'fatal', "Error creating temp file; check log" );
+    $self->log( 'fatal', "MPD C choked. We're on it!" );
+    return;
   }
 
   if ( $o->is_file ) {
@@ -109,7 +110,8 @@ sub UniqPrimers {
 
   my $ok = $self->RunMpp( $primerPt->stringify );
   if ( !$ok ) {
-    return $self->log( 'fatal', "Error running mpd binary" );
+    $self->log( 'fatal', "Error running mpd binary" );
+    return;
   }
 
   my $primer = MPD::Primer->new( $primerPt->stringify );

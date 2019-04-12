@@ -1,3 +1,4 @@
+
 #!/usr/bin/env perl
 # Name:           snpfile_annotate_mongo_redis_queue.pl
 # Description:
@@ -9,6 +10,8 @@
 #There may be much more performant ways of handling this without loss of reliability; loook at just storing entire message in perl, and relying on decode_json
 #Todo: (Probably in Node.js): add failed jobs, and those stuck in processingJobs list for too long, back into job queue, for N attempts (stored in jobs:jobID)
 
+# Same as beanstalk_queue_server.pl, except doesn't communicate back to beanstalk server, so
+# safe to check that jobs are working as expected before daemonizing beanstalk_queue_server.pl
 use 5.10.0;
 use strict;
 use warnings;
@@ -29,16 +32,8 @@ use lib './lib';
 
 use MPD;
 
-# use AnyEvent;
-# use AnyEvent::PocketIO::Client;
-#use Sys::Info;
-#use Sys::Info::Constants qw( :device_cpu )
-#for choosing max connections based on available resources
-
-# max of 1 job at a time for now
-
 my $DEBUG = 0;
-my $conf  = LoadFile("./config/queue.yaml");
+my $conf  = LoadFile($ARGV[0] || './config/queue.yaml');
 
 # Beanstalk servers will be sharded
 my $beanstalkHost = $conf->{beanstalk_host_1};
@@ -68,8 +63,6 @@ my $beanstalkEvents = Beanstalk::Client->new(
   }
 );
 
-# my $pm = Parallel::ForkManager->new(8);
-
 while ( my $job = $beanstalk->reserve ) {
 
   # Parallel ForkManager used only to throttle number of jobs run in parallel
@@ -78,59 +71,30 @@ while ( my $job = $beanstalk->reserve ) {
   # Unfortunately, parallel fork manager doesn't play nicely with try tiny
   # prevents anything within the try from executing
   my $jobDataHref = decode_json( $job->data );
+  say "Trying job";
+  p $jobDataHref;
 
-  $beanstalkEvents->put(
-    {
-      priority => 0,
-      data     => encode_json {
-        event   => 'started',
-        queueId => $job->id,
-      }
-    }
-  );
+  my ($err, $result);
 
-  my ( $err, $result ) = handleJob( $jobDataHref, $job->id );
+  try {
+    $result = handleJob( $jobDataHref, $job->id );
 
-  if ($err) {
-    say "job " . $job->id . " failed with $err";
-
-    $beanstalkEvents->put(
-      {
-        priority => 0,
-        data     => encode_json(
-          {
-            event   => 'failed',
-            queueId => $job->id,
-            reason  => $err,
-          }
-        )
-      }
-    );
-
-    $beanstalk->bury( $job->id );
-  }
-  else {
     say "completed job with queue id " . $job->id;
+  } catch {
+    my $indexOfConstructor = index( $_, "MPD::" );
 
-    # Signal completion before completion actually occurs via delete
-    # To be conservative; since after delete message is lost
-    $beanstalkEvents->put(
-      {
-        priority => 0,
-        data     => encode_json(
-          {
-            event   => 'completed',
-            queueId => $job->id,
-            results  => $result,
-          }
-        )
-      }
-    );
+    if ( ~$indexOfConstructor ) {
+      $err = substr( $_, 0, $indexOfConstructor );
+    }
+    else {
+      $err = $_;
+    }
 
-    $beanstalk->delete( $job->id );
-  }
+    say "job " . $job->id . " failed with $err";
+  };
 
-  say "finished";
+  say "Finished";
+  exit(0);
 }
 
 sub handleJob {
@@ -144,32 +108,18 @@ sub handleJob {
   say "inputHref is";
   p $inputHref;
 
-  try {
-    my $dir = path( $inputHref->{OutDir} );
+  my $dir = path( $inputHref->{OutDir} );
 
-    if ( !$dir->is_dir ) { $dir->mkpath(); }
+  if ( !$dir->is_dir ) { $dir->mkpath(); }
 
-    my $m = MPD->new_with_config($inputHref);
+  my $m = MPD->new_with_config($inputHref);
 
-    say "MPD is ";
-    p $m;
+  say "MPD is ";
+  p $m;
 
-    my $result = $m->RunAll();
+  my $result = $m->RunAll();
 
-    return ( undef, $result );
-  }
-  catch {
-    my $indexOfConstructor = index( $_, "MPD::" );
-
-    if ( ~$indexOfConstructor ) {
-      $failed = substr( $_, 0, $indexOfConstructor );
-    }
-    else {
-      $failed = $_;
-    }
-
-    return ( $_, undef );
-  };
+  return $result;
 }
 
 #Here we may wish to read a json or yaml file containing argument mappings
