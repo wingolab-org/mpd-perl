@@ -55,10 +55,6 @@ sub BUILD {
     my $msg = sprintf( "Error: Bed entry, start > stop: %s:%s-%s",
       $self->Chr, $self->Start, $self->End );
   }
-  if ( $self->Size > 2000 ) {
-    my $msg = sprintf( "Error: Bed entry, target is >2000bp: %s:%s-%s",
-      $self->Chr, $self->Start, $self->End );
-  }
   if ( $self->Size == 0 ) {
     my $msg = sprintf( "Error: Bed entry, start == stop: %s:%s-%s",
       $self->Chr, $self->Start, $self->End );
