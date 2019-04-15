@@ -19,7 +19,7 @@ use warnings;
 use Beanstalk::Client;
 use Parallel::ForkManager;
 use Cpanel::JSON::XS;
-use DDP;
+use DDP output => 'stdout';
 use Getopt::Long;
 use File::Basename;
 use Log::Any::Adapter;
@@ -71,7 +71,7 @@ while ( my $job = $beanstalk->reserve ) {
   # Unfortunately, parallel fork manager doesn't play nicely with try tiny
   # prevents anything within the try from executing
   my $jobDataHref = decode_json( $job->data );
-  say "Trying job";
+  say "Trying job: " . $job->id;
   p $jobDataHref;
 
   my ($err, $result);

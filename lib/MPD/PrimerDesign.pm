@@ -58,6 +58,8 @@ has TmStep        => ( is => 'ro', isa => 'Num', default => 1,   required => 1 )
 #my $primerPt = Path::Tiny->tempfile();
 #my $isPcrPt  = Path::Tiny->tempfile();
 #my $mpdOut   = Path::Tiny->tempfile();
+
+#PID is not safe to use here if multiple processes are interacting with a shared NFS
 my $bedPt    = path("$$.bed");
 my $tmpCmdPt = path("$$.cmd");
 my $primerPt = path("$$.primer");
