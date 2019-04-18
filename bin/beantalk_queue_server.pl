@@ -258,7 +258,8 @@ sub coerceInputs {
 sub getConfigFilePath {
   my $assembly = shift;
 
-  my @maybePath = glob( path($configPathBaseDir)->child($assembly . ".y*ml")->stringify );
+  my @maybePath =
+    glob( path($configPathBaseDir)->child($assembly . ".y*ml")->stringify );
 
   if ( scalar @maybePath ) {
     if ( scalar @maybePath > 1 ) {

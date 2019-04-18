@@ -45,37 +45,37 @@ if ( !$dir->is_dir ) { $dir->mkpath(); }
 my $file = LoadFile($config_file);
 
 if($file->{Core} || $file->{User}) {
-    my $coreHref = $file->{Core} || {};
-    my $userBasic = $file->{User} && $file->{User}{Basic} || {};
-    my $userAdvanced = $file->{User} && $file->{User}{Advanced} || {};
+  my $coreHref = $file->{Core} || {};
+  my $userBasic = $file->{User} && $file->{User}{Basic} || {};
+  my $userAdvanced = $file->{User} && $file->{User}{Advanced} || {};
 
-    %$file = (%$coreHref, %$userBasic, %$userAdvanced);
+  %$file = (%$coreHref, %$userBasic, %$userAdvanced);
 
-    for my $key (keys %$file) {
-      if(ref $file->{$key}) {
-        if(exists $file->{$key}{val}) {
-          $file->{$key} = $file->{$key}{val};
-        }
+  for my $key (keys %$file) {
+    if(ref $file->{$key}) {
+      if(exists $file->{$key}{val}) {
+        $file->{$key} = $file->{$key}{val};
       }
     }
+  }
 }
 
 my $default = {
-    BedFile     => $bed_file,
-    OutExt      => $out_ext,
-    OutDir      => $dir,
-    InitTmMin   => 58,
-    InitTmMax   => 61,
-    PoolMin     => $poolMin,
-    Debug       => $verbose,
-    IterMax     => 2,
-    RunIsPcr    => 0,
-    Act         => $act,
-    ProjectName => $out_ext,
-    FwdAdapter  => 'ACACTGACGACATGGTTCTACA',
-    RevAdapter  => 'TACGGTAGCAGAGACTTGGTCT',
-    Offset      => 0,
-    Randomize   => 1,
+  BedFile     => $bed_file,
+  OutExt      => $out_ext,
+  OutDir      => $dir,
+  InitTmMin   => 58,
+  InitTmMax   => 61,
+  PoolMin     => $poolMin,
+  Debug       => $verbose,
+  IterMax     => 2,
+  RunIsPcr    => 0,
+  Act         => $act,
+  ProjectName => $out_ext,
+  FwdAdapter  => 'ACACTGACGACATGGTTCTACA',
+  RevAdapter  => 'TACGGTAGCAGAGACTTGGTCT',
+  Offset      => 0,
+  Randomize   => 1,
 };
 
 my %config = (%$default, %$file);

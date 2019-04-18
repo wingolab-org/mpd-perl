@@ -21,6 +21,8 @@ use MPD::isPcr;
 use MPD::Primer;
 use MPD::Psl;
 
+use IPC::Run qw(run timeout);
+
 with "MPD::Role::Message";
 
 our $VERSION = '0.001';
@@ -37,7 +39,8 @@ has TwoBitFile  => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
 has MpdBinary   => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
 has MpdIdx      => ( is => 'ro', isa => File,    coerce => 1, required => 1, );
 has dbSnpIdx    => ( is => 'ro', isa => File,    coerce => 1, required => 1, );
-has OutExt => ( is => 'ro', isa => 'Str', required => 1, );
+has OutExt      => ( is => 'ro', isa => 'Str',  required => 1, );
+has timeout     => ( is => 'ro', isa => 'Int',  required => 1, );
 
 # pcr attrs
 has PrimerSizeMin => ( is => 'ro', isa => 'Int', default => 17,  required => 1 );
@@ -79,8 +82,9 @@ sub SayMppCmd {
 }
 
 sub RunMpp {
-  state $check = compile( Object, Str );
-  my ( $self, $outFile ) = $check->(@_);
+  state $check = compile( Object, Str, Optional[Int] );
+  my ( $self, $outFile, $timeout ) = $check->(@_);
+  $timeout //= 7200;
 
   my $o = path($outFile);
 
@@ -88,9 +92,16 @@ sub RunMpp {
   my $tmpCmdFh = $tmpCmdPt->filehandle(">");
   say {$tmpCmdFh} $self->SayMppCmd( $o->stringify );
 
-  my $cmd = sprintf( "%s < %s > %s\n",
-    $self->MpdBinary, $tmpCmdPt->stringify, $mpdOut->stringify );
-  if ( system($cmd ) != 0 ) {
+  my $ret;
+
+  eval{
+    # If command line arguments are ever required they are added as items in the
+    # cmd array
+    my @cmd = ($self->MpdBinary);
+    $ret = run(\@cmd,'<',$tmpCmdPt->stringify,'>',$mpdOut->stringify,timeout($timeout));
+  };
+
+  unless ($ret) {
     $self->log( 'fatal', "MPD C choked. We're on it!" );
     return;
   }
@@ -108,7 +119,7 @@ sub RunMpp {
 sub UniqPrimers {
   my $self = shift;
 
-  my $ok = $self->RunMpp( $primerPt->stringify );
+  my $ok = $self->RunMpp( $primerPt->stringify, $self->timeout );
   if ( !$ok ) {
     $self->log( 'fatal', "Error running mpd binary" );
     return;
@@ -118,8 +129,6 @@ sub UniqPrimers {
   if ( !$self->RunIsPcr ) {
     return $primer;
   }
-
-  # say $primerPt->slurp;
 
   my $isPcr = MPD::isPcr->new(
     {

@@ -140,7 +140,8 @@ sub _processBedFile {
   my @lines = path($bedFile)->lines( { chomp => 1 } );
 
   if(@lines > 400000) {
-    $self->log('fatal', "Sorry! Currently we support a maximum of 400,000 primer pairs/targets");
+    $self->log('fatal',
+      "Sorry! Currently we support a maximum of 400,000 primer pairs/targets");
   }
 
   my $id = 0;

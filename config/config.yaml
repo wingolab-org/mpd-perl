@@ -14,6 +14,9 @@ Core:
   dbSnpIdx:
     val: ds_flat.sdx
     type: str
+  timeout:
+    val: 7200
+    type: int
 
 User:
   Basic:
