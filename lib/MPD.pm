@@ -38,7 +38,6 @@ has TwoBitFile  => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
 has MpdBinary   => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
 has MpdIdx      => ( is => 'ro', isa => File,    coerce => 1, required => 1, );
 has dbSnpIdx    => ( is => 'ro', isa => File,    coerce => 1, required => 1, );
-has timeout     => ( is => 'ro', isa => 'Int',   required => 1, );
 has OutExt      => ( is => 'ro', isa => 'Str',   required => 1, );
 has OutDir      => ( is => 'ro', isa => AbsPath, coerce => 1, required => 1, );
 has Debug       => ( is => 'ro', isa => 'Bool',  default => 0 );
@@ -65,6 +64,7 @@ has PoolMax       => ( is => 'ro', isa => 'Int', default => 10,  required => 1 )
 has PoolMin       => ( is => 'ro', isa => 'Int', default => 1,   required => 1 );
 has TmStep        => ( is => 'rw', isa => 'Num', default => 0.5, required => 1 );
 has PadSize       => ( is => 'ro', isa => 'Int', default => 60,  required => 1 );
+has Timeout       => ( is => 'ro', isa => 'Int', default => 7200 );
 
 # max and min allowed parameter values
 my %ParmsMax = (
@@ -250,14 +250,6 @@ sub PrintPrimerData {
   my $isPcrPt = $self->OutDir->child( sprintf( "%s.isPcr.txt", $OutExt ) );
   $p->WriteIsPcrFile( $isPcrPt->stringify );
 
-  #  my $compressPath;
-  #  if($self->compress) {
-  #    $compressPath = $self->compressPath( $self->OutDir->child($OutExt) );
-  #  }
-
-  #  say "compress path is " . $self->OutDir->child($OutExt)->stringify;
-  #  p $compressPath;
-
   if($printJson) {
     return $p->MakeCoveredJsonString( $self->Bed );
   }
@@ -385,7 +377,7 @@ sub _pcrParams {
   my $self = shift;
 
   my @attrs = qw/ AmpSizeMin AmpSizeMax GcMin GcMax GcMax TmMin TmMax TmStep
-    PoolMin PoolMax PadSize OutExt RunIsPcr /;
+    PoolMin PoolMax PadSize OutExt RunIsPcr Timeout /;
   my @files = qw/ BedFile isPcrBinary TwoBitFile MpdBinary MpdIdx dbSnpIdx /;
 
   my %attrs = map { $_ => $self->$_ } (@attrs);
