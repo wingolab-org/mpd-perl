@@ -16,7 +16,7 @@ use warnings;
 use Beanstalk::Client;
 use Parallel::ForkManager;
 use Cpanel::JSON::XS;
-use DDP;
+use DDP output => 'stdout';
 use Getopt::Long;
 use File::Basename;
 use Log::Any::Adapter;
