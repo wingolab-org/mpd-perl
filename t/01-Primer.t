@@ -110,8 +110,7 @@ is( $testFile->digest(),
 {
   my $testFile = 't/forOrder.json';
   #SaveJsonData( $testFile, $p->OrderAsHref() );
-  is_deeply( $p->OrderAsHref(), LoadJsonData($testFile),
-    'OrderAsHref() - no options' );
+  is_deeply( $p->OrderAsHref(), LoadJsonData($testFile),'OrderAsHref() - no options' );
 }
 
 {

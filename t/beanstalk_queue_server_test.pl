@@ -1,17 +1,6 @@
 
 #!/usr/bin/env perl
-# Name:           snpfile_annotate_mongo_redis_queue.pl
-# Description:
-# Date Created:   Wed Dec 24
-# By:             Alex Kotlar
-# Requires: Snpfile::AnnotatorBase
 
-#Todo: Handle job expiration (what happens when job:id expired; make sure no other job operations happen, let Node know via sess:?)
-#There may be much more performant ways of handling this without loss of reliability; loook at just storing entire message in perl, and relying on decode_json
-#Todo: (Probably in Node.js): add failed jobs, and those stuck in processingJobs list for too long, back into job queue, for N attempts (stored in jobs:jobID)
-
-# Same as beanstalk_queue_server.pl, except doesn't communicate back to beanstalk server, so
-# safe to check that jobs are working as expected before daemonizing beanstalk_queue_server.pl
 use 5.10.0;
 use strict;
 use warnings;
@@ -80,7 +69,8 @@ while ( my $job = $beanstalk->reserve ) {
     $result = handleJob( $jobDataHref, $job->id );
 
     say "completed job with queue id " . $job->id;
-  } catch {
+  }
+  catch {
     my $indexOfConstructor = index( $_, "MPD::" );
 
     if ( ~$indexOfConstructor ) {
@@ -208,7 +198,8 @@ sub coerceInputs {
 sub getConfigFilePath {
   my $assembly = shift;
 
-  my @maybePath = glob( path($configPathBaseDir)->child($assembly . ".y*ml")->stringify );
+  my @maybePath =
+    glob( path($configPathBaseDir)->child($assembly . ".y*ml")->stringify );
 
   if ( scalar @maybePath ) {
     if ( scalar @maybePath > 1 ) {

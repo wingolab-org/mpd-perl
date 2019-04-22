@@ -33,6 +33,7 @@
 -nhsc   # Don't expect hanging side comments
 -nbbc   # No blank before comments
 -tso    # Tight secret operators
+-fws    # Freeze white space
 
 -msc=1  # Space to side comment
 

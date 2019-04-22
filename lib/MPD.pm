@@ -38,15 +38,15 @@ has TwoBitFile  => ( is => 'ro', isa => AbsFile, coerce => 1, required => 0, );
 has MpdBinary   => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
 has MpdIdx      => ( is => 'ro', isa => File,    coerce => 1, required => 1, );
 has dbSnpIdx    => ( is => 'ro', isa => File,    coerce => 1, required => 1, );
-has OutExt => ( is => 'ro', isa => 'Str', required => 1, );
-has OutDir => ( is => 'ro', isa => AbsPath, coerce => 1, required => 1, );
-has Debug    => ( is => 'ro', isa => 'Bool', default => 0 );
-has RunIsPcr => ( is => 'ro', isa => 'Bool', default => 1 );
-has Act      => ( is => 'ro', isa => 'Bool', default => 0 );
+has OutExt      => ( is => 'ro', isa => 'Str',   required => 1, );
+has OutDir      => ( is => 'ro', isa => AbsPath, coerce => 1, required => 1, );
+has Debug       => ( is => 'ro', isa => 'Bool',  default => 0 );
+has RunIsPcr    => ( is => 'ro', isa => 'Bool',  default => 1 );
+has Act         => ( is => 'ro', isa => 'Bool',  default => 0 );
 
 # attr for parameter optimization
 has CoverageThreshold => ( is => 'ro', isa => 'Num', default => 0.5, required => 1 );
-has IncrAmpSize       => ( is => 'ro', isa => 'Int', default => 10, required => 1 );
+has IncrAmpSize       => ( is => 'ro', isa => 'Int', default => 10,  required => 1 );
 has IncrTm            => ( is => 'ro', isa => 'Num', default => 0.5, required => 1 );
 has IncrTmStep        => ( is => 'ro', isa => 'Num', default => 0.5, required => 1 );
 has IterMax           => ( is => 'ro', isa => 'Int', default => 10,  required => 1 );
@@ -64,6 +64,7 @@ has PoolMax       => ( is => 'ro', isa => 'Int', default => 10,  required => 1 )
 has PoolMin       => ( is => 'ro', isa => 'Int', default => 1,   required => 1 );
 has TmStep        => ( is => 'rw', isa => 'Num', default => 0.5, required => 1 );
 has PadSize       => ( is => 'ro', isa => 'Int', default => 60,  required => 1 );
+has Timeout       => ( is => 'ro', isa => 'Int', default => 7200 );
 
 # max and min allowed parameter values
 my %ParmsMax = (
@@ -171,7 +172,7 @@ sub BUILDARGS {
     }
   }
 
-  return $data
+  return $data;
 }
 
 sub BUILD {
@@ -249,21 +250,12 @@ sub PrintPrimerData {
   my $isPcrPt = $self->OutDir->child( sprintf( "%s.isPcr.txt", $OutExt ) );
   $p->WriteIsPcrFile( $isPcrPt->stringify );
 
-#  my $compressPath;
-#  if($self->compress) {
-#    $compressPath = $self->compressPath( $self->OutDir->child($OutExt) );
-#  }
+  if($printJson) {
+    return $p->MakeCoveredJsonString( $self->Bed );
+  }
 
-#  say "compress path is " . $self->OutDir->child($OutExt)->stringify;
-#  p $compressPath;
-   
-   if($printJson) {
-     return $p->MakeCoveredJsonString( $self->Bed );
-   }
-
-   return;
+  return;
 }
-
 
 # FindBestCoverage performs the primer design for a number of specified
 # iterations. Before each primer design attempt the objects PCR parameters
@@ -385,7 +377,7 @@ sub _pcrParams {
   my $self = shift;
 
   my @attrs = qw/ AmpSizeMin AmpSizeMax GcMin GcMax GcMax TmMin TmMax TmStep
-    PoolMin PoolMax PadSize OutExt RunIsPcr /;
+    PoolMin PoolMax PadSize OutExt RunIsPcr Timeout /;
   my @files = qw/ BedFile isPcrBinary TwoBitFile MpdBinary MpdIdx dbSnpIdx /;
 
   my %attrs = map { $_ => $self->$_ } (@attrs);

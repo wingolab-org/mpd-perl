@@ -21,8 +21,13 @@ state $gzip = which('pigz') || which('gzip');
 # state $gzip = which('gzip');
 $tar = "$tar --use-compress-program=$gzip";
 
-has gzipPath => (is => 'ro', isa => 'Str', init_arg => undef, lazy => 1,
-  default => sub {$gzip});
+has gzipPath => (
+  is => 'ro',
+  isa => 'Str',
+  init_arg => undef,
+  lazy => 1,
+  default => sub {$gzip}
+);
 
 #if we compress the output, the extension we store it with
 has compressExtension => (
@@ -50,16 +55,19 @@ sub compressPath {
   my $basename = $fileObjectOrPath->basename;
   my $parentDir = $fileObjectOrPath->parent->stringify;
 
-  my $compressName = substr($basename, 0, rindex($basename, ".") ) . $self->compressExtension;
-  
-  my $outcome =
-    system(sprintf("cd %s; $tar --exclude '.*' --exclude %s -cf %s %s --remove-files",
+  my $compressName =
+    substr($basename, 0, rindex($basename, ".") ) . $self->compressExtension;
+
+  my $outcome =system(
+    sprintf(
+      "cd %s; $tar --exclude '.*' --exclude %s -cf %s %s --remove-files",
       $parentDir,
       $compressName,
       $compressName, #and don't include our new compressed file in our tarball
       "$basename*", #the name of the directory we want to compress
-    ) );
-    
+    )
+  );
+
   if($outcome) {
     return $self->log( 'warn', "Zipping failed with $?" );
   }
