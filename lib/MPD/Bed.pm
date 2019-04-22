@@ -183,6 +183,7 @@ sub _processBedFile {
 
       $id++;
 
+      # TODO: This is the mechanism for catching fatal errors from MPD:Bed:Raw
       try {
         my $b = MPD::Bed::Raw->new(
           {
