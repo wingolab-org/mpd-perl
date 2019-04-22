@@ -41,7 +41,7 @@ has dbSnpIdx    => ( is => 'ro', isa => File,    coerce => 1, required => 1, );
 has OutExt => ( is => 'ro', isa => 'Str', required => 1, );
 has OutDir => ( is => 'ro', isa => AbsPath, coerce => 1, required => 1, );
 has Debug    => ( is => 'ro', isa => 'Bool', default => 0 );
-has RunIsPcr => ( is => 'ro', isa => 'Bool', default => 1 );
+has RunIsPcr => ( is => 'ro', isa => 'Bool', default => 0 );
 has Act      => ( is => 'ro', isa => 'Bool', default => 0 );
 
 # attr for parameter optimization
