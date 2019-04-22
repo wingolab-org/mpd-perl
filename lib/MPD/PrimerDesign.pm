@@ -29,11 +29,11 @@ my $time_now = ctime();
 has Bed => ( is => 'ro', isa => 'MPD::Bed', required => 1 );
 
 # optionally run isPcr on design
-has RunIsPcr => ( is => 'ro', isa => 'Bool', default => 1 );
+has RunIsPcr => ( is => 'ro', isa => 'Bool', default => 0 );
 
 # required files
-has isPcrBinary => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
-has TwoBitFile  => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
+has isPcrBinary => ( is => 'ro', isa => AbsFile, coerce => 1, required => 0, );
+has TwoBitFile  => ( is => 'ro', isa => AbsFile, coerce => 1, required => 0, );
 has MpdBinary   => ( is => 'ro', isa => AbsFile, coerce => 1, required => 1, );
 has MpdIdx      => ( is => 'ro', isa => File,    coerce => 1, required => 1, );
 has dbSnpIdx    => ( is => 'ro', isa => File,    coerce => 1, required => 1, );
