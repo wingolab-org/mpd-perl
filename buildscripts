@@ -1,0 +1,20 @@
+docker build --target base -t jmeigs1/mpd .
+docker tag mpd jmeigs1/mpd
+docker push jmeigs1/mpd
+
+docker run -d --restart unless-stopped \
+    -v /home/ec2-user/mpd-dat:/root/mpd-dat \
+    -v /mpd:/mpd \
+    -w /root/mpd-dat \
+    --name mpd \
+    jmeigs1/mpd beantalk_queue_server.pl
+
+docker run -it \
+    -v /home/ec2-user/mpd-dat:/root/mpd-dat \
+    -v /mpd:/mpd \
+    -w /root/mpd-dat \
+    --name debug \
+    jmeigs1/mpd /bin/sh
+
+docker login --username jmeigs1 --password-stdin <<< xxxx
+docker pull jmeigs1/mpd:latest

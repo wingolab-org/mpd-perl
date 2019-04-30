@@ -1,0 +1,114 @@
+
+Core:
+  Act: 1
+  MpdBinary: ~/mpd-c/bin/mpd
+  MpdIdx: ~/mpd-dat/hg38.d14.sdx
+  dbSnpIdx: ~/mpd-dat/ds_flat.sdx
+  RunIsPcr: 0
+User:
+  Basic:
+    -
+        name: CoverageThreshold
+        val: 0.8
+        type: int
+        desc: "Required target coverage percentage"
+    -
+        name: AmpSizeMax
+        val: 260
+        type: int
+        max: 1000
+        desc: "Maximum amplicon size for each PCR reaction (max value: 1000)."     
+    -
+        name: AmpSizeMin
+        val: 230
+        type: int
+        min: 100
+        desc: "Minimum amplicon size for each PCR reaction (min value: 100)."
+    -
+        name: PoolMax
+        val: 10
+        type: int
+        desc: "Maximum number of primers in a pool (max value: 10)."
+        max: 10
+    -
+        name: PoolMin
+        val: 5
+        type: int
+        desc: "Minimum number of primers in a pool (min value: 3)."
+
+  Advanced:
+    - 
+        name: PadSize
+        val: 60
+        type: int
+        desc: "Size of the flanking region that is used to design the primer."
+    - 
+        name: PrimerSizeMin
+        val: 17
+        type: int
+        desc: "Minimum primer size (in base pairs)."
+    -
+        name: PrimerSizeMax
+        val: 27
+        type: int
+        desc: "Maximum primer size (in base pairs)."      
+    -
+        name: TmMax
+        val: 62
+        type: float
+        desc: "Maximum primer melting temperature (Tm)."      
+    -
+        name: TmMin
+        val: 57
+        type: float
+        desc: "Maximum primer melting temperature (Tm)."
+    - 
+        name: GcMax
+        val: 0.7
+        type: float
+        max: 1
+        min: 0
+        desc: "Maximum primer percent GC content."
+    - 
+        name: GcMin
+        val: 0.3
+        type: float
+        max: 1
+        min: 0
+        desc: "Minimum percent primer GC content."
+    -
+        name: IterMax
+        val: 2
+        type: int
+        desc: "Maximum number of iterations used to find the best primers."
+    -
+        name: IncrTm
+        val: 1
+        type: int
+        desc: "How many times to increment melting temperature."
+    -
+        name: IncrTmStep
+        val: 1
+        type: int
+        desc: "By how much to increment melting temperature."
+    -
+        name: IncrAmpSize
+        val: 10
+        type: int
+        desc: "If a primer isn't found for the AmpSize, iterate by this length."
+
+    -   min: 3
+        name: FwdAdapter
+        val: ACACTGACGACATGGTTCTACA
+        type: str
+        desc: "Forward adapter sequence"
+    -
+        name: RevAdapter
+        val: TACGGTAGCAGAGACTTGGTCT
+        type: str
+        desc: "Reverse adapter sequence"
+    -
+        name: Randomize
+        val: true
+        type: bool
+        desc: "To minimize batch effects, plate primer pools in random order"

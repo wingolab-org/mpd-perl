@@ -388,8 +388,8 @@ sub _pcrParams {
     PoolMin PoolMax PadSize OutExt RunIsPcr /;
   my @files = qw/ BedFile isPcrBinary TwoBitFile MpdBinary MpdIdx dbSnpIdx /;
 
-  my %attrs = map { $_ => $self->$_ } (@attrs);
-  my %files = map { $_ => $self->$_->stringify } @files;
+  my %attrs = map { ( $self->$_ ) ? ($_ => $self->$_) : ()} (@attrs);
+  my %files = map { ( $self->$_ ) ? ($_ => $self->$_->stringify) : ()} @files;
 
   if ( $self->Debug ) {
     say "=== PCR Parameters ===";
