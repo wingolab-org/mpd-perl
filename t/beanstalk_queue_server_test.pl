@@ -33,13 +33,13 @@ use lib './lib';
 use MPD;
 
 my $DEBUG = 0;
-my $conf  = LoadFile($ARGV[0] || './config/queue.yaml');
+my $conf  = LoadFile( $ARGV[0] || './config/queue.yaml' );
 
 # Beanstalk servers will be sharded
 my $beanstalkHost = $conf->{beanstalk_host_1};
 my $beanstalkPort = $conf->{beanstalk_port_1};
 
-my $configPathBaseDir = "./config/web/";
+my $configPathBaseDir = "./config/docker/";
 
 my $verbose = 1;
 
@@ -63,6 +63,8 @@ my $beanstalkEvents = Beanstalk::Client->new(
   }
 );
 
+say 'Connecting to beanstalk server ' . $conf->{beanstalkd}{host};
+
 while ( my $job = $beanstalk->reserve ) {
 
   # Parallel ForkManager used only to throttle number of jobs run in parallel
@@ -74,7 +76,7 @@ while ( my $job = $beanstalk->reserve ) {
   say "Trying job: " . $job->id;
   p $jobDataHref;
 
-  my ($err, $result);
+  my ( $err, $result );
 
   try {
     $result = handleJob( $jobDataHref, $job->id );

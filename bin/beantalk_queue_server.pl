@@ -13,6 +13,8 @@ use 5.10.0;
 use strict;
 use warnings;
 
+use File::Basename;
+use Cwd 'abs_path';
 use Beanstalk::Client;
 use Parallel::ForkManager;
 use Cpanel::JSON::XS;
@@ -35,16 +37,17 @@ use MPD;
 #use Sys::Info::Constants qw( :device_cpu )
 #for choosing max connections based on available resources
 
-# max of 1 job at a time for now
-
 my $DEBUG = 0;
-my $conf  = LoadFile("./config/queue.yaml");
 
+# Should be located in mpd-perl/bin
+my $HomeDir = abs_path( dirname(__FILE__) . '/..' );
+my $conf  = LoadFile( $HomeDir . '/config/queue.yaml' );
+my $configPathBaseDir = $HomeDir . '/config/docker/';
+
+# max of 1 job at a time for now
 # Beanstalk servers will be sharded
 my $beanstalkHost = $conf->{beanstalk_host_1};
 my $beanstalkPort = $conf->{beanstalk_port_1};
-
-my $configPathBaseDir = "./config/web/";
 
 my $verbose = 1;
 
