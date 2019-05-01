@@ -120,7 +120,7 @@ sub RunMpp {
 sub UniqPrimers {
   my $self = shift;
 
-  my $ok = $self->RunMpp( $primerPt->stringify, $self->timeout );
+  my $ok = $self->RunMpp( $primerPt->stringify, $self->Timeout );
   if ( !$ok ) {
     $self->log( 'fatal', "Error running mpd binary" );
     return;
