@@ -8,9 +8,9 @@ use 5.10.0;
 use Moose 2;
 use namespace::autoclean;
 
-use Carp qw/ croak /;
-
 our $VERSION = '0.001';
+
+with "MPD::Role::Message";
 
 has Chr   => ( is => 'ro', isa => 'Int', required => 1, );
 has Start => ( is => 'ro', isa => 'Int', required => 1, );
@@ -58,12 +58,17 @@ sub BUILD {
   if ( $self->Start > $self->End ) {
     my $msg = sprintf( "Error: Bed entry, start > stop: %s:%s-%s",
       $self->Chr, $self->Start, $self->End );
-    croak $msg;
+    return $self->log( 'fatal', $msg );
+  }
+  if ( $self->Size > 2000 ) {
+    my $msg = sprintf( "Error: Bed entry, target is >2000bp: %s:%s-%s",
+      $self->Chr, $self->Start, $self->End );
+    return $self->log( 'fatal', $msg );    
   }
   if ( $self->Size == 0 ) {
     my $msg = sprintf( "Warn: Bed entry, start == stop: %s:%s-%s",
       $self->Chr, $self->Start, $self->End );
-    say STDERR $msg;
+    $self->log( 'warn', $msg );
   }
 }
 

@@ -1,0 +1,7 @@
+beanstalkd:
+  host: 172.31.61.62
+  port: 11300
+  tubes:
+    annotation:
+      submission: mpd
+      events: mpd_events

@@ -7,9 +7,8 @@ use 5.10.0;
 use Moose 2;
 use namespace::autoclean;
 
-use Carp qw/ croak /;
 use Excel::Writer::XLSX;
-use JSON;
+use Cpanel::JSON::XS;
 use Path::Tiny;
 use Type::Params qw/ compile /;
 use Types::Standard qw/ :types /;
@@ -18,7 +17,6 @@ use List::Util qw/ shuffle /;
 use Time::localtime;
 
 use Data::Dump qw/ dump /; # for debugging
-
 use MPD::Bed;
 use MPD::Bed::Covered;
 use MPD::Covered;
@@ -29,6 +27,8 @@ our $VERSION = '0.001';
 my @plates = ( 1 .. 48 );
 my @cols   = ( 1 .. 12 );
 my @rows   = qw(A B C D E F G H);
+
+with 'MPD::Role::Message';
 
 has Primers => (
   traits  => ['Array'],
@@ -99,9 +99,11 @@ sub WriteOrderFile {
   my ( $self, $file, $optHref ) = $check->(@_);
 
   if ( $self->no_primers ) {
-    my $msg = "Error - no primers to write to order file: $file";
-    say $msg;
-    return;
+    return $self->( 'warn', "No primers to write to order file: $file" );
+  }
+
+  if ( eval("require 'Excel::Writer::XLSX'") ) {
+    die "Cannot find 'Excel::Writer::XLSX'";
   }
 
   my @header      = ( "WellPosition", "Name", "Sequence", "Notes" );
@@ -110,6 +112,7 @@ sub WriteOrderFile {
   my $primerCount = 0;
 
   my $workbook = Excel::Writer::XLSX->new($file);
+
   $workbook->set_properties(
     title    => "Multiplex Primers",
     author   => 'The MPD package',
@@ -161,9 +164,7 @@ sub OrderAsHref {
   my ( $self, $optHref ) = $check->(@_);
 
   if ( $self->no_primers ) {
-    my $msg = "no primers to order";
-    say $msg;
-    return;
+    return $self->log( 'info', 'No primers to order' );
   }
 
   # Determine number of pools for the primer set
@@ -209,8 +210,7 @@ sub OrderAsHref {
     $offset = 0;
   }
   if ( $offset < 0 ) {
-    my $msg = "Printing Offset (PrnOffset) expected to be >=0.";
-    croak($msg);
+    return $self->log( 'fatal', "Printing Offset (PrnOffset) expected to be >=0." );
   }
 
   # organize the data we need
@@ -232,9 +232,7 @@ sub OrderAsHref {
 
     # are we beyond the max number of plates
     if ( !exists $poolStartsAref->[ $pairCount + $offset ] ) {
-      my $msg = "Asked to plate across >48 plates";
-      warn $msg;
-      last;
+      last $self->log( 'warn', "Asked to plate across >48 plates" );
     }
 
     # did we reach the maximum number of plates specified
@@ -245,7 +243,8 @@ sub OrderAsHref {
         $plateMax + 1,
         $pairCount, $primerCount
       );
-      say STDERR $msg;
+      $self->log( 'warn', $msg );
+
       return \%prnHash;
     }
 
@@ -342,8 +341,7 @@ sub PrimerList {
 
   # TODO: use reftype here
   if ( scalar @$attrsAref == 0 ) {
-    my $msg = "Attributes should be a list";
-    croak $msg;
+    return $self->log( 'fatal', "Attributes should be a list" );
   }
 
   my @array;
@@ -607,9 +605,7 @@ sub WriteCoveredFile {
   my ( $self, $fileName, $bedObj ) = $check->(@_);
 
   if ( $self->no_primers ) {
-    my $msg = "Error - no primers to write to coverage file: $fileName";
-    say $msg;
-    return;
+    return $self->log( 'warn', "No primers to write to coverage file: $fileName" );
   }
 
   my $fh         = path($fileName)->filehandle(">");
@@ -617,14 +613,25 @@ sub WriteCoveredFile {
   say {$fh} $coveredObj->Entries_as_str();
 }
 
+sub MakeCoveredJsonString {
+  state $check = compile( Object, Object );
+  my ( $self, $bedObj ) = $check->(@_);
+
+  if ( $self->no_primers ) {
+    return $self->log( 'warn', "No primers to make covered JSON string from" );
+  }
+
+  my $coveredObj = $self->BedCoverage($bedObj);
+
+  return encode_json( $coveredObj->Entries_as_aref() );
+}
+
 sub WriteUncoveredFile {
   state $check = compile( Object, Str, Object );
   my ( $self, $fileName, $bedObj ) = $check->(@_);
 
   if ( $self->no_primers ) {
-    my $msg = "Error - no primers to write to uncovered file: $fileName";
-    say $msg;
-    return;
+    return $self->log( 'warn', "No primers to write to uncovered file: $fileName" );
   }
 
   my $fh              = path($fileName)->filehandle(">");
@@ -643,9 +650,7 @@ sub WritePrimerFile {
   }
 
   if ( $self->no_primers ) {
-    my $msg = "Error - no primers to write to primer file: $fileName";
-    say $msg;
-    return;
+    return $self->log( 'warn', "No primers to write to primer file: $fileName" );
   }
 
   my $fh = path($fileName)->filehandle(">");
@@ -676,9 +681,7 @@ sub WriteIsPcrFile {
   }
 
   if ( $self->no_primers ) {
-    my $msg = "Error - no primers to write to isPcr file: $fileName";
-    say $msg;
-    return;
+    return $self->log( 'warn', "No primers to write to isPcr file: $fileName" );
   }
 
   my $fh = path($fileName)->filehandle(">");
@@ -699,9 +702,7 @@ sub Sumarize_as_aref {
   my @array;
 
   if ( $self->no_primers ) {
-    my $msg = "no primers to summarize";
-    say $msg;
-    return;
+    return $self->log( 'warn', "No primers to summarize" );
   }
 
   # header
@@ -748,20 +749,20 @@ sub BUILDARGS {
       return $class->SUPER::BUILDARGS( $_[0] );
     }
     else {
-      my $msg =
-        "Error: Construct MPD::Primer object with either a hashref, arrayref of hashrefs, or primer file";
-      croak($msg);
+      return $class->log( 'fatal',
+            "Error: Construct MPD::Primer object with either a hashref,"
+          . " arrayref of hashrefs, or primer file" );
     }
   }
   else {
-    my $msg =
-      "Error: Construct MPD::Primer object with either a hashref, arrayref of hashrefs, or primer file";
-    croak($msg);
+    return $class->log( 'fatal',
+          'Error: Construct MPD::Primer object with either'
+        . ' a hashref, arrayref of hashrefs, or primer file' );
   }
 }
 
 sub _ReadPrimerFile {
-  my ( $class, $file ) = @_;
+  my ( $self, $file ) = @_;
 
   my @primers;
 
@@ -789,7 +790,7 @@ sub _ReadPrimerFile {
       # legacy files don't have a header but start with the Primer_number
       if ( $fields[0] =~ m/\A\d+/ ) {
         %header = map { $expHeader[$_] => $_ } ( 0 .. $#expHeader );
-        say dump( \%header );
+        $self->log( 'info', dump( \%header ) );
       }
       # newer format has a header so skip to the next line after grabbing the header
       elsif ( !@NotFoundFields ) {
@@ -799,7 +800,7 @@ sub _ReadPrimerFile {
       else {
         my $msg = "Cannot find fields: ";
         $msg .= "'" . join( "', '", @NotFoundFields ) . "'";
-        croak $msg;
+        return $self->log( 'fatal', $msg );
       }
     }
     my %data = map { $_ => $fields[ $header{$_} ] } ( keys %header );
@@ -808,7 +809,7 @@ sub _ReadPrimerFile {
       my $msg =
         sprintf( "Error: no value for expected header Primer_number at line: %d\n\n==> %s",
         ( $lineCount + 1 ), $line );
-      croak $msg;
+      return $self->log( 'fatal', $msg );
     }
 
     if ( $primerNumber == 0 ) {

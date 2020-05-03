@@ -8,7 +8,6 @@ use Moose 2;
 use MooseX::Types::Path::Tiny qw/ AbsPath AbsFile File /;
 use namespace::autoclean;
 
-use Carp qw/ croak /;
 use Excel::Writer::XLSX;
 use Path::Tiny;
 use Type::Params qw/ compile /;
@@ -21,6 +20,8 @@ use MPD::Bed;
 use MPD::isPcr;
 use MPD::Primer;
 use MPD::Psl;
+
+with "MPD::Role::Message";
 
 our $VERSION = '0.001';
 my $time_now = ctime();
@@ -49,14 +50,21 @@ has TmMin         => ( is => 'ro', isa => 'Num', default => 57,  required => 1 )
 has TmMax         => ( is => 'ro', isa => 'Num', default => 62,  required => 1 );
 has PoolMax       => ( is => 'ro', isa => 'Int', default => 10,  required => 1 );
 has PadSize       => ( is => 'ro', isa => 'Int', default => 60,  required => 1 );
-has TmStep        => ( is => 'ro', isa => 'Num', default => 0.5, required => 1 );
+has TmStep        => ( is => 'ro', isa => 'Num', default => 1,   required => 1 );
 
 # Temporary Files
-my $bedPt    = Path::Tiny->tempfile();
-my $tmpCmdPt = Path::Tiny->tempfile();
-my $primerPt = Path::Tiny->tempfile();
-my $isPcrPt  = Path::Tiny->tempfile();
-my $mpdOut   = Path::Tiny->tempfile();
+#my $bedPt    = Path::Tiny->tempfile();
+#my $tmpCmdPt = Path::Tiny->tempfile();
+#my $primerPt = Path::Tiny->tempfile();
+#my $isPcrPt  = Path::Tiny->tempfile();
+#my $mpdOut   = Path::Tiny->tempfile();
+
+#PID is not safe to use here if multiple processes are interacting with a shared NFS
+my $bedPt    = path("$$.bed");
+my $tmpCmdPt = path("$$.cmd");
+my $primerPt = path("$$.primer");
+my $isPcrPt  = path("$$.isPcr");
+my $mpdOut   = path("$$.mpdOut");
 
 sub SayMppCmd {
   state $check = compile( Object, Str );
@@ -85,10 +93,8 @@ sub RunMpp {
   my $cmd = sprintf( "%s < %s > %s\n",
     $self->MpdBinary, $tmpCmdPt->stringify, $mpdOut->stringify );
   if ( system($cmd ) != 0 ) {
-    my $logFile = path("./mpd_error.log");
-    $mpdOut->copy( $logFile->stringify );
-    say sprintf( "Error executing mpd command; check log '%s'", $logFile->stringify );
-    exit(1);
+    $self->log( 'fatal', "MPD C choked. We're on it!" );
+    return;
   }
 
   if ( $o->is_file ) {
@@ -106,8 +112,8 @@ sub UniqPrimers {
 
   my $ok = $self->RunMpp( $primerPt->stringify );
   if ( !$ok ) {
-    my $msg = "Error running mpd binary";
-    croak $msg;
+    $self->log( 'fatal', "Error running mpd binary" );
+    return;
   }
 
   my $primer = MPD::Primer->new( $primerPt->stringify );
